@@ -1,0 +1,22 @@
+
+services:
+  postgres:
+    image: postgres:17
+    container_name: nokshighor-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: nokshighor_db
+      POSTGRES_USER: nokshighor_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - nokshighor_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nokshighor_user -d nokshighor_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  nokshighor_data:
