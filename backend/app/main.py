@@ -3,7 +3,8 @@ from sqlalchemy import text
 
 from app.core.database import engine
 from app.routes.auth import router as auth_router
-
+from app.routes.sales import router as sales_router
+from app.routes.tax import router as tax_router
 
 app = FastAPI(
     title="NokshiGhor API",
@@ -13,6 +14,8 @@ app = FastAPI(
 
 
 app.include_router(auth_router)
+app.include_router(sales_router)
+app.include_router(tax_router)
 
 
 @app.get("/")

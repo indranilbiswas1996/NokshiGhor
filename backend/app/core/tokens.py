@@ -9,15 +9,14 @@ from app.core.config import settings
 
 def create_access_token(
     user_id: UUID,
+    business_id: UUID | None = None,
     expires_delta: timedelta | None = None,
 ) -> str:
     now = datetime.now(timezone.utc)
 
     expires_at = now + (
         expires_delta
-        or timedelta(
-            minutes=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES
-        )
+        or timedelta(minutes=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
     )
 
     payload: dict[str, Any] = {
@@ -26,6 +25,9 @@ def create_access_token(
         "exp": expires_at,
         "type": "access",
     }
+
+    if business_id is not None:
+        payload["business_id"] = str(business_id)
 
     return jwt.encode(
         payload,

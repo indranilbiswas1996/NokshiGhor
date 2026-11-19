@@ -7,7 +7,18 @@ from app.core.tokens import create_access_token
 from app.schemas.auth import LoginRequest, LoginResponse, UserResponse
 from app.services.auth_service import authenticate_user
 from app.core.dependencies import get_current_user
-
+from app.schemas.business import (
+    BusinessListResponse,
+    BusinessResponse,
+    BusinessSelectRequest,
+    BusinessSelectResponse,
+)
+from app.services.business_service import (
+    get_user_businesses,
+    get_user_business,
+)
+from app.core.dependencies import get_current_business
+from app.core.dependencies import require_permission
 router = APIRouter(
     prefix="/auth",
     tags=["Authentication"],
@@ -55,3 +66,60 @@ def get_my_profile(
         full_name=current_user["full_name"],
         email=current_user["email"],
     )
+@router.get("/businesses", response_model=BusinessListResponse)
+def get_my_businesses(
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    businesses = get_user_businesses(
+        db=db,
+        user_id=current_user["id"],
+    )
+
+    return BusinessListResponse(
+        businesses=[
+            BusinessResponse(**business)
+            for business in businesses
+        ],
+        total=len(businesses),
+    )
+@router.post(
+    "/businesses/select",
+    response_model=BusinessSelectResponse,
+)
+def select_business(
+    request: BusinessSelectRequest,
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    business = get_user_business(
+        db=db,
+        user_id=current_user["id"],
+        business_id=request.business_id,
+    )
+
+    if business is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have access to this business",
+        )
+
+    access_token = create_access_token(
+        user_id=current_user["id"],
+        business_id=business["id"],
+    )
+
+    return BusinessSelectResponse(
+        access_token=access_token,
+        token_type="bearer",
+        expires_in=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        business=BusinessResponse(**business),
+    )
+@router.get(
+    "/current-business",
+    response_model=BusinessResponse,
+)
+def get_current_business_info(
+    current_business=Depends(get_current_business),
+):
+    return BusinessResponse(**current_business)
