@@ -64,8 +64,12 @@ export const authApi = {
     return response.data
   },
 
-  logout(): void {
-    localStorage.removeItem('nokshighor-access-token')
-    localStorage.removeItem('nokshighor-current-business')
+  async logout(): Promise<void> {
+    try {
+      await apiClient.post('/auth/logout')
+    } finally {
+      localStorage.removeItem('nokshighor-access-token')
+      localStorage.removeItem('nokshighor-current-business')
+    }
   },
 }

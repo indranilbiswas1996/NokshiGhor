@@ -1,4 +1,4 @@
-
+import { authApi } from './api/auth'
 import { useState, useEffect, useRef, useCallback, type CSSProperties } from 'react'
 import {
   LayoutDashboard, Package, Boxes, ShoppingCart, ShoppingBag,
@@ -15,6 +15,7 @@ import type { SaleListItem } from './types/sales'
 import NewSaleForm from './components/NewSaleForm'
 import SaleDetails from './components/SaleDetails'
 import OpeningStock from './components/OpeningStock'
+
 const navigation = [
   { title: 'Overview', bn: 'সারসংক্ষেপ', items: [
     { label: 'Dashboard', bn: 'ড্যাশবোর্ড', icon: LayoutDashboard },
@@ -142,10 +143,14 @@ useState<Business | null>(null)
 const handleAuthenticated = useCallback((business: Business) => {
   setAuthenticatedBusiness(business)
 }, [])
-const handleLogout = () => {
-  localStorage.removeItem('nokshighor-access-token')
-  localStorage.removeItem('nokshighor-current-business')
-  setAuthenticatedBusiness(null)
+const handleLogout = async () => {
+  try {
+    await authApi.logout()
+  } catch (error) {
+    console.error('Logout failed:', error)
+  } finally {
+    setAuthenticatedBusiness(null)
+  }
 }
 useEffect(() => {
   localStorage.setItem('nokshighor-branding', JSON.stringify(branding))

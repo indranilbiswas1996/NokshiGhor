@@ -1,6 +1,7 @@
+
 from datetime import datetime, timedelta, timezone
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import jwt
 
@@ -13,7 +14,6 @@ def create_access_token(
     expires_delta: timedelta | None = None,
 ) -> str:
     now = datetime.now(timezone.utc)
-
     expires_at = now + (
         expires_delta
         or timedelta(minutes=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -21,6 +21,7 @@ def create_access_token(
 
     payload: dict[str, Any] = {
         "sub": str(user_id),
+        "jti": str(uuid4()),
         "iat": now,
         "exp": expires_at,
         "type": "access",
@@ -41,12 +42,13 @@ def decode_access_token(token: str) -> dict[str, Any]:
         token,
         settings.JWT_SECRET_KEY,
         algorithms=[settings.JWT_ALGORITHM],
-        options={"require": ["sub", "iat", "exp", "type"]},
+        options={"require": ["sub", "jti", "iat", "exp", "type"]},
     )
 
     if payload.get("type") != "access":
         raise jwt.InvalidTokenError("Invalid token type")
 
     UUID(payload["sub"])
+    UUID(payload["jti"])
 
     return payload

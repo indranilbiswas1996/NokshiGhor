@@ -1,12 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-
+from datetime import datetime, timezone
+from uuid import UUID
 from app.core.config import settings
 from app.core.database import get_db
-from app.core.tokens import create_access_token
+from app.core.tokens import create_access_token, decode_access_token
 from app.schemas.auth import LoginRequest, LoginResponse, UserResponse
 from app.services.auth_service import authenticate_user
 from app.core.dependencies import get_current_user
+from fastapi.security import HTTPBearer
+from sqlalchemy import text
 from app.schemas.business import (
     BusinessListResponse,
     BusinessResponse,
@@ -18,7 +21,8 @@ from app.services.business_service import (
     get_user_business,
 )
 from app.core.dependencies import get_current_business
-from app.core.dependencies import require_permission
+
+bearer_scheme = HTTPBearer(auto_error=False)
 router = APIRouter(
     prefix="/auth",
     tags=["Authentication"],
@@ -123,3 +127,39 @@ def get_current_business_info(
     current_business=Depends(get_current_business),
 ):
     return BusinessResponse(**current_business)
+@router.post("/logout")
+def logout(
+    current_user=Depends(get_current_user),
+    credentials=Depends(bearer_scheme),
+    db: Session = Depends(get_db),
+):
+    payload = decode_access_token(credentials.credentials)
+
+    token_id = UUID(payload["jti"])
+    expires_at = datetime.fromtimestamp(
+        payload["exp"],
+        tz=timezone.utc,
+    )
+
+    try:
+        db.execute(
+            text("""
+                SELECT public.fn_auth_revoke_token(
+                    :token_id,
+                    :expires_at
+                )
+            """),
+            {
+                "token_id": token_id,
+                "expires_at": expires_at,
+            },
+        )
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Logout service temporarily unavailable",
+        )
+
+    return {"message": "Successfully logged out"}
