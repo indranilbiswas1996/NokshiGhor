@@ -159,3 +159,141 @@ def get_sales_list(
             status_code=503,
             detail="Unable to retrieve sales list",
         )
+def get_sales_products(
+    db: Session,
+    business_id: UUID,
+    user_id: UUID,
+):
+    statement = text("""
+        SELECT public.fn_get_sales_products(
+            CAST(:user_id AS UUID),
+            CAST(:business_id AS UUID)
+        )
+    """)
+
+    try:
+        return db.execute(
+            statement,
+            {
+                "user_id": str(user_id),
+                "business_id": str(business_id),
+            },
+        ).scalar_one()
+
+    except SQLAlchemyError:
+        db.rollback()
+        logger.exception("Unable to retrieve sales products")
+        raise HTTPException(
+            status_code=503,
+            detail="Unable to retrieve sales products",
+        )
+
+
+def get_sales_customers(
+    db: Session,
+    business_id: UUID,
+    user_id: UUID,
+):
+    statement = text("""
+        SELECT public.fn_get_sales_customers(
+            CAST(:user_id AS UUID),
+            CAST(:business_id AS UUID)
+        )
+    """)
+
+    try:
+        return db.execute(
+            statement,
+            {
+                "user_id": str(user_id),
+                "business_id": str(business_id),
+            },
+        ).scalar_one()
+
+    except SQLAlchemyError:
+        db.rollback()
+        logger.exception("Unable to retrieve sales customers")
+        raise HTTPException(
+            status_code=503,
+            detail="Unable to retrieve sales customers",
+        )
+
+
+def get_sales_warehouses(
+    db: Session,
+    business_id: UUID,
+    user_id: UUID,
+):
+    statement = text("""
+        SELECT public.fn_get_sales_warehouses(
+            CAST(:user_id AS UUID),
+            CAST(:business_id AS UUID)
+        )
+    """)
+
+    try:
+        return db.execute(
+            statement,
+            {
+                "user_id": str(user_id),
+                "business_id": str(business_id),
+            },
+        ).scalar_one()
+
+    except SQLAlchemyError:
+        db.rollback()
+        logger.exception("Unable to retrieve sales warehouses")
+        raise HTTPException(
+            status_code=503,
+            detail="Unable to retrieve sales warehouses",
+        )
+
+def post_sale(
+    db: Session,
+    business_id: UUID,
+    user_id: UUID,
+    sale_id: UUID,
+):
+    statement = text("""
+        SELECT public.fn_post_sale(
+            CAST(:business_id AS UUID),
+            CAST(:user_id AS UUID),
+            CAST(:sale_id AS UUID)
+        )
+    """)
+
+    try:
+        result = db.execute(
+            statement,
+            {
+                "business_id": str(business_id),
+                "user_id": str(user_id),
+                "sale_id": str(sale_id),
+            },
+        ).scalar_one()
+
+        db.commit()
+        return result
+
+    except SQLAlchemyError as exc:
+        db.rollback()
+
+        original_error = getattr(exc, "orig", exc)
+        sqlstate = (
+            getattr(original_error, "sqlstate", None)
+            or getattr(original_error, "pgcode", None)
+        )
+
+        if sqlstate == "P0001":
+            logger.warning("Sale posting validation failed")
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Sale cannot be posted. Check sale status and stock availability.",
+            )
+
+        logger.exception("Sale posting failed")
+
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Unable to post sale",
+        )

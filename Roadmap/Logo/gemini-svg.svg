@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 320" width="100%" height="100%">
+  <defs>
+    <!-- লোগোর গাঢ় লাল ও মেরুন গ্রেডিয়েন্ট -->
+    <linearGradient id="maroonGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8b0000" />
+      <stop offset="50%" stop-color="#6e0000" />
+      <stop offset="100%" stop-color="#4d0000" />
+    </linearGradient>
+
+    <!-- হালকা গ্লো ও শ্যাডো ইফেক্ট -->
+    <filter id="softShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#330000" flood-opacity="0.25" />
+    </filter>
+  </defs>
+
+  <g filter="url(#softShadow)">
+    <!-- ১. বাম দিকের ঘরের চাল ও চিমনি -->
+    <path d="M 160 95 L 205 95 L 205 42 L 222 42 L 222 80 L 278 25 L 368 95 C 375 100 385 102 395 100 C 378 108 362 106 348 96 L 278 42 L 195 102 C 182 106 170 103 160 95 Z" fill="url(#maroonGrad)" />
+
+    <!-- ২. ঘরের চার-খোপের জানালা -->
+    <g fill="url(#maroonGrad)">
+      <rect x="260" y="75" width="14" height="14" rx="1" />
+      <rect x="278" y="75" width="14" height="14" rx="1" />
+      <rect x="260" y="93" width="14" height="14" rx="1" />
+      <rect x="278" y="93" width="14" height="14" rx="1" />
+    </g>
+
+    <!-- ৩. বাম পাশের চারকোনা ফ্রেম -->
+    <rect x="92" y="108" width="146" height="146" fill="none" stroke="url(#maroonGrad)" stroke-width="6.5" />
+
+    <!-- ৪. ফ্রেমের ভেতরের ৬-পাপড়ির আলপনা/ফুল -->
+    <g transform="translate(165, 181)" fill="url(#maroonGrad)">
+      <path d="M 0,-5 C -14,-28 -14,-48 0,-64 C 14,-48 14,-28 0,-5 Z" />
+      <path d="M 0,-5 C -14,-28 -14,-48 0,-64 C 14,-48 14,-28 0,-5 Z" transform="rotate(60)" />
+      <path d="M 0,-5 C -14,-28 -14,-48 0,-64 C 14,-48 14,-28 0,-5 Z" transform="rotate(120)" />
+      <path d="M 0,-5 C -14,-28 -14,-48 0,-64 C 14,-48 14,-28 0,-5 Z" transform="rotate(180)" />
+      <path d="M 0,-5 C -14,-28 -14,-48 0,-64 C 14,-48 14,-28 0,-5 Z" transform="rotate(240)" />
+      <path d="M 0,-5 C -14,-28 -14,-48 0,-64 C 14,-48 14,-28 0,-5 Z" transform="rotate(300)" />
+    </g>
+
+    <!-- ৫. "নকশী" লেখার ওপরের বাঁকানো আর্চ (Arch) -->
+    <path d="M 262 142 C 335 82, 465 78, 545 122 C 465 92, 345 96, 265 156 Z" fill="url(#maroonGrad)" />
+
+    <!-- ৬. মূল বাংলা লেখা: "নকশী ঘর" -->
+    <text x="305" y="232" font-family="&#39;Hind Siliguri&#39;, &#39;Noto Serif Bengali&#39;, &#39;SolaimanLipi&#39;, &#39;Kalpurush&#39;, sans-serif" font-weight="800" font-size="138" letter-spacing="-1" fill="url(#maroonGrad)">নকশী ঘর</text>
+
+    <!-- ৭. নিচের বাঁকানো আন্ডারলাইন সুইশ (Swoosh) -->
+    <path d="M 282 268 C 415 232, 650 245, 845 252 C 650 256, 415 245, 282 268 Z" fill="url(#maroonGrad)" />
+
+    <!-- ৮. নিচের ইংরেজি লেখা: "NOKSHI GHOR" -->
+    <text x="550" y="302" text-anchor="middle" font-family="&#39;Cinzel&#39;, &#39;Playfair Display&#39;, &#39;Times New Roman&#39;, Georgia, serif" font-weight="700" font-size="38" letter-spacing="7" fill="url(#maroonGrad)">NOKSHI GHOR</text>
+  </g>
+</svg>

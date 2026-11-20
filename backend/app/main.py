@@ -4,17 +4,29 @@ from sqlalchemy import text
 from app.core.database import engine
 from app.routes.auth import router as auth_router
 from app.routes.sales import router as sales_router
+from app.routes.opening_stock import router as opening_stock_router
 from app.routes.tax import router as tax_router
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
     title="NokshiGhor API",
     description="Smart Electrical & Interior Business Management System",
     version="0.1.0",
 )
-
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(auth_router)
 app.include_router(sales_router)
+app.include_router(opening_stock_router)
 app.include_router(tax_router)
 
 

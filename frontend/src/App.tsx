@@ -1,14 +1,20 @@
 
-import { useState, useEffect, useRef, type CSSProperties } from 'react'
+import { useState, useEffect, useRef, useCallback, type CSSProperties } from 'react'
 import {
   LayoutDashboard, Package, Boxes, ShoppingCart, ShoppingBag,
   Wallet, BriefcaseBusiness, ReceiptText, Users, Settings,
   Bell, Search, Menu, X, TrendingUp,
   ArrowUpRight, CalendarDays, Plus,
-  ChevronDown, Zap, Languages, CircleHelp, Palette
+  ChevronDown, Zap, Languages, CircleHelp, Palette, LogOut
 } from 'lucide-react'
 import './App.css'
-
+import AuthScreen from './components/AuthScreen'
+import type { Business } from './types/auth'
+import { salesApi } from './api/sales'
+import type { SaleListItem } from './types/sales'
+import NewSaleForm from './components/NewSaleForm'
+import SaleDetails from './components/SaleDetails'
+import OpeningStock from './components/OpeningStock'
 const navigation = [
   { title: 'Overview', bn: 'সারসংক্ষেপ', items: [
     { label: 'Dashboard', bn: 'ড্যাশবোর্ড', icon: LayoutDashboard },
@@ -79,6 +85,10 @@ function App() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [language, setLanguage] = useState<'en' | 'bn'>('en')
   const [activePage, setActivePage] = useState('Dashboard')
+  const [isCreatingSale, setIsCreatingSale] = useState(false)
+  const [selectedSaleId, setSelectedSaleId] = useState<string | null>(null)
+  const [salesRefreshKey, setSalesRefreshKey] = useState(0)
+  const [isCreatingOpeningStock, setIsCreatingOpeningStock] = useState(false)
 
   const bengali = language === 'bn'
   const [theme, setTheme] = useState(() => {
@@ -126,7 +136,17 @@ function App() {
     return defaultBranding
   }
 })
+const [authenticatedBusiness, setAuthenticatedBusiness] =
+useState<Business | null>(null)
 
+const handleAuthenticated = useCallback((business: Business) => {
+  setAuthenticatedBusiness(business)
+}, [])
+const handleLogout = () => {
+  localStorage.removeItem('nokshighor-access-token')
+  localStorage.removeItem('nokshighor-current-business')
+  setAuthenticatedBusiness(null)
+}
 useEffect(() => {
   localStorage.setItem('nokshighor-branding', JSON.stringify(branding))
 }, [branding])
@@ -149,6 +169,52 @@ useEffect(() => {
   )
 }, [businessSettings])
 
+useEffect(() => {
+  if (activePage !== 'Sales & POS' || !authenticatedBusiness) {
+    return
+  }
+
+  let ignore = false
+
+  const loadSales = async () => {
+    setSalesLoading(true)
+    setSalesError('')
+
+    try {
+      const response = await salesApi.getSales({
+        limit: 20,
+        offset: 0,
+      })
+
+      if (!ignore) {
+        setSales(response.items)
+        setSalesTotal(response.total_count)
+      }
+    } catch (error) {
+      if (!ignore) {
+        setSalesError(
+          'Unable to load sales. Please try again.'
+        )
+        console.error('Sales loading failed:', error)
+      }
+    } finally {
+      if (!ignore) {
+        setSalesLoading(false)
+      }
+    }
+  }
+
+  loadSales()
+
+  return () => {
+    ignore = true
+  }
+}, [activePage, authenticatedBusiness, salesRefreshKey])
+
+  const [sales, setSales] = useState<SaleListItem[]>([])
+  const [salesLoading, setSalesLoading] = useState(false)
+  const [salesError, setSalesError] = useState('')
+  const [salesTotal, setSalesTotal] = useState(0)
   const pageNames: Record<string, string> = {
     Dashboard: 'ড্যাশবোর্ড',
     Products: 'পণ্য',
@@ -168,7 +234,9 @@ useEffect(() => {
     { label: bengali ? 'স্টক মূল্য' : 'Stock Value', value: '₹ 8.42L', change: '4.5%', up: true, icon: Boxes, color: 'purple', note: bengali ? 'মোট পণ্যের মূল্য' : 'total inventory value' },
     { label: bengali ? 'আজকের লাভ' : "Today's Profit", value: '₹ 6,330', change: '+15.3%', up: true, icon: TrendingUp, color: 'orange', note: bengali ? 'গতকালের তুলনায়' : 'vs yesterday' },
   ]
-
+if (!authenticatedBusiness) {
+  return <AuthScreen onAuthenticated={handleAuthenticated} />
+}
   return (
     <div
       className={`app-shell ${collapsed ? 'sidebar-collapsed' : ''}`}
@@ -310,6 +378,14 @@ useEffect(() => {
             <button className="icon-button language-button" onClick={() => setLanguage(bengali ? 'en' : 'bn')} title="Change language"><Languages size={19} /><span>{bengali ? 'EN' : 'বাংলা'}</span></button>
             <button className="icon-button notification-button" aria-label="Notifications"><Bell size={19} /><i /></button>
             <div className="topbar-avatar">OW</div>
+            <button
+              className="icon-button"
+              onClick={handleLogout}
+              title="Logout"
+              aria-label="Logout"
+            >
+              <LogOut size={19} />
+            </button>
           </div>
         </header>
 
@@ -322,18 +398,137 @@ useEffect(() => {
             </div>
             <div className="welcome-actions">
               <button className="outline-button"><CalendarDays size={17} /> 19 Nov 2026 <ChevronDown size={15} /></button>
-              <button className="primary-button" onClick={() => setActivePage('Sales & POS')}><Plus size={18} /> {bengali ? 'নতুন বিক্রয়' : 'New Sale'}</button>
+              <button className="primary-button" onClick={() => {
+                setActivePage('Sales & POS')
+                setIsCreatingSale(true)
+              }}><Plus size={18} /> {bengali ? 'নতুন বিক্রয়' : 'New Sale'}</button>
             </div>
           </section>
+          {activePage !== 'Dashboard' &&
+            activePage !== 'Sales & POS' &&
+            activePage !== 'Inventory' && (
+              <div className="page-notice">
+                <strong>{bengali ? pageNames[activePage] : activePage}</strong>
+                <span>
+                  {bengali
+                    ? 'এই মডিউলের UI এবং API পরবর্তী ধাপে তৈরি হবে।'
+                    : 'This module UI and API will be developed in the upcoming steps.'}
+                </span>
+              </div>
+            )}
 
-          {activePage !== 'Dashboard' && (
-            <div className="page-notice">
-              <strong>{bengali ? pageNames[activePage] : activePage}</strong>
-              <span>{bengali ? 'এই মডিউলের UI এবং API পরবর্তী ধাপে তৈরি হবে।' : 'This module UI and API will be developed in the upcoming steps.'}</span>
-            </div>
+          {activePage === 'Inventory' && !isCreatingOpeningStock && (
+            <section className="panel transactions-panel">
+              <div className="panel-header">
+                <div>
+                  <h2>{bengali ? 'ইনভেন্টরি ব্যবস্থাপনা' : 'Inventory Management'}</h2>
+                  <p>
+                    {bengali
+                      ? 'প্রাথমিক স্টক তৈরি ও পরিচালনা করুন'
+                      : 'Create and manage your opening stock'}
+                  </p>
+                </div>
+                <button
+                  className="primary-button"
+                  onClick={() => setIsCreatingOpeningStock(true)}
+                >
+                  <Plus size={18} />
+                  {bengali ? 'প্রাথমিক স্টক যোগ করুন' : 'Add Opening Stock'}
+                </button>
+              </div>
+            </section>
           )}
 
-          <section className="stats-grid">
+          {activePage === 'Inventory' && isCreatingOpeningStock && (
+            <OpeningStock
+              onCancel={() => setIsCreatingOpeningStock(false)}
+              onCompleted={() => setIsCreatingOpeningStock(false)}
+            />
+          )}
+
+          {activePage === 'Sales & POS' && !isCreatingSale && !selectedSaleId && (
+            <section className="panel transactions-panel">
+              <div className="panel-header">
+                <div>
+                  <h2>{bengali ? 'বিক্রয়ের তালিকা' : 'Sales List'}</h2>
+                  <p>
+                    {bengali
+                      ? `মোট বিক্রয়: ${salesTotal}`
+                      : `Total sales: ${salesTotal}`}
+                  </p>
+                </div>
+
+              </div>
+
+              {salesLoading ? (
+                <p>{bengali ? 'লোড হচ্ছে...' : 'Loading sales...'}</p>
+              ) : salesError ? (
+                <p role="alert">{salesError}</p>
+              ) : sales.length === 0 ? (
+                <p>{bengali ? 'কোনো বিক্রয় পাওয়া যায়নি।' : 'No sales found.'}</p>
+              ) : (
+                <div className="table-wrapper">
+                  <table className="transaction-table">
+                    <thead>
+                      <tr>
+                        <th>INVOICE</th>
+                        <th>CUSTOMER</th>
+                        <th>DATE</th>
+                        <th>AMOUNT</th>
+                        <th>STATUS</th>
+                        <th>PAYMENT</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sales.map((sale) => (
+                        <tr key={sale.id}>
+                          <td className="transaction-id">
+                            <button
+                              type="button"
+                              className="invoice-link"
+                              onClick={() => setSelectedSaleId(sale.id)}
+                            >
+                              {sale.sale_number}
+                            </button>
+                          </td>
+                          <td>{sale.customer_name_snapshot}</td>
+                          <td className="muted-cell">{sale.sale_date}</td>
+                          <td className="amount-cell">
+                            ₹ {Number(sale.total_amount).toLocaleString('en-IN', {
+                              minimumFractionDigits: 2,
+                            })}
+                          </td>
+                          <td>
+                            <span className={`status-badge ${sale.sale_status}`}>
+                              {sale.sale_status}
+                            </span>
+                          </td>
+                          <td>{sale.payment_status}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </section>
+          )}
+          {activePage === 'Sales & POS' && selectedSaleId && (
+            <SaleDetails
+              saleId={selectedSaleId}
+              onBack={() => setSelectedSaleId(null)}
+            />
+          )}
+          {activePage === 'Sales & POS' && isCreatingSale && (
+            <NewSaleForm
+              onCancel={() => setIsCreatingSale(false)}
+              onCreated={() => {
+                setIsCreatingSale(false)
+                setSalesRefreshKey((current) => current + 1)
+              }}
+            />
+          )}
+          {activePage === 'Dashboard' && (
+            <section className="stats-grid">
             {stats.map((stat) => {
               const Icon = stat.icon
               return (
@@ -345,7 +540,8 @@ useEffect(() => {
               )
             })}
           </section>
-
+        )}
+        {activePage === 'Dashboard' && (
           <section className="dashboard-grid">
             <article className="panel sales-panel">
               <div className="panel-header">
@@ -375,7 +571,8 @@ useEffect(() => {
               <button className="text-link" onClick={() => setActivePage('Inventory')}>{bengali ? 'ইনভেন্টরি দেখুন' : 'View inventory'} <ArrowUpRight size={15} /></button>
             </article>
           </section>
-
+        )}
+        {activePage === 'Dashboard' && (
           <section className="panel transactions-panel">
             <div className="panel-header">
               <div><h2>{bengali ? 'সাম্প্রতিক লেনদেন' : 'Recent Transactions'}</h2><p>{bengali ? 'আপনার সর্বশেষ ব্যবসায়িক লেনদেন' : 'Your latest business transactions'}</p></div>
@@ -429,6 +626,7 @@ useEffect(() => {
           </div>
 
           </section>
+          )}
           {activePage === 'Settings' && (
             <section className="settings-container">
               <div className="settings-heading">
@@ -702,7 +900,7 @@ useEffect(() => {
               </div>
             </section>
           )}
-          <footer className="page-footer"><span>© 2026 NokshiGhor. All rights reserved.</span><span>Smart Electrical & Interior Business Management System</span></footer>
+          <footer className="page-footer"><span>© {new Date().getFullYear()} {businessSettings.shopName}. All rights reserved.</span><span>Smart Electrical & Interior Business Management System</span></footer>
         </div>
       </main>
     </div>

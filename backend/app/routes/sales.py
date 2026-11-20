@@ -11,8 +11,15 @@ from app.core.dependencies import (
     require_permission,
 )
 from app.schemas.sales import SaleCreateRequest
-from app.services.sales_service import create_sale_draft, get_sale_details
-from app.services.sales_service import get_sales_list
+from app.services.sales_service import (
+    create_sale_draft,
+    get_sale_details,
+    get_sales_list,
+    get_sales_products,
+    get_sales_customers,
+    get_sales_warehouses,
+    post_sale,
+)
 
 router = APIRouter(prefix="/sales", tags=["Sales"])
 
@@ -43,6 +50,44 @@ def create_draft(
 
     except HTTPException:
         raise
+
+@router.get("/reference/products")
+def list_sales_products(
+    db: Annotated[Session, Depends(get_db)],
+    current_user=Depends(get_current_user),
+    current_business=Depends(require_permission("sales.view")),
+):
+    return get_sales_products(
+        db=db,
+        business_id=current_business["id"],
+        user_id=current_user["id"],
+    )
+
+
+@router.get("/reference/customers")
+def list_sales_customers(
+    db: Annotated[Session, Depends(get_db)],
+    current_user=Depends(get_current_user),
+    current_business=Depends(require_permission("sales.view")),
+):
+    return get_sales_customers(
+        db=db,
+        business_id=current_business["id"],
+        user_id=current_user["id"],
+    )
+
+
+@router.get("/reference/warehouses")
+def list_sales_warehouses(
+    db: Annotated[Session, Depends(get_db)],
+    current_user=Depends(get_current_user),
+    current_business=Depends(require_permission("sales.view")),
+):
+    return get_sales_warehouses(
+        db=db,
+        business_id=current_business["id"],
+        user_id=current_user["id"],
+    )
 
 @router.get("/{sale_id}")
 def read_sale_details(
@@ -109,3 +154,24 @@ def list_sales(
     )
 
     return result
+
+
+@router.post("/{sale_id}/post")
+def post_sale_endpoint(
+    sale_id: UUID,
+    db: Annotated[Session, Depends(get_db)],
+    current_user=Depends(get_current_user),
+    current_business=Depends(require_permission("sales.manage")),
+):
+    result = post_sale(
+        db=db,
+        business_id=current_business["id"],
+        user_id=current_user["id"],
+        sale_id=sale_id,
+    )
+
+    return {
+        "success": True,
+        "message": "Sale posted successfully",
+        "sale_id": str(result),
+    }
