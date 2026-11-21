@@ -55,4 +55,21 @@ export const branchApi = {
     )
     return response.data
   },
+
+  async setBranchStatus(
+    branchId: string,
+    isActive: boolean
+  ): Promise<{ branch: Branch }> {
+    const response = await apiClient.patch<{ branch: Branch }>(
+      `/branches/${branchId}/status`,
+      { is_active: isActive }
+    )
+    return response.data
+  },
+  async setDefaultBranch(branchId: string): Promise<{ branch: Branch }> {
+    const response = await apiClient.patch<{ branch: Branch }>(
+      `/branches/${branchId}/default`
+    )
+    return response.data
+  },
 }

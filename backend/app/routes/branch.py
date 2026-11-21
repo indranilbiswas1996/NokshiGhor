@@ -13,8 +13,14 @@ from app.schemas.branch import (
     BranchUpdateRequest,
 )
 from uuid import UUID
-from app.services.branch_service import get_branches, create_branch, update_branch
-
+from app.services.branch_service import (
+    get_branches,
+    create_branch,
+    update_branch,
+    set_branch_status,
+    set_default_branch,
+)
+from app.schemas.branch import BranchStatusUpdateRequest
 
 router = APIRouter(
     prefix="/branches",
@@ -66,6 +72,40 @@ def edit_branch(
         actor_user_id=str(current_user["id"]),
         branch_id=str(branch_id),
         payload=payload,
+    )
+
+    return {"branch": branch}
+
+@router.patch("/{branch_id}/status", response_model=BranchCreateResponse)
+def update_branch_status(
+    branch_id: UUID,
+    payload: BranchStatusUpdateRequest,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+    current_business=Depends(get_current_business),
+):
+    branch = set_branch_status(
+        db=db,
+        business_id=str(current_business["id"]),
+        actor_user_id=str(current_user["id"]),
+        branch_id=str(branch_id),
+        is_active=payload.is_active,
+    )
+
+    return {"branch": branch}
+
+@router.patch("/{branch_id}/default", response_model=BranchCreateResponse)
+def set_branch_default(
+    branch_id: UUID,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+    current_business=Depends(get_current_business),
+):
+    branch = set_default_branch(
+        db=db,
+        business_id=str(current_business["id"]),
+        actor_user_id=str(current_user["id"]),
+        branch_id=str(branch_id),
     )
 
     return {"branch": branch}

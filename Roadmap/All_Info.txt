@@ -8,8 +8,10 @@ git status
 git commit -m "Complete owner management and profile update"
 git push -u origin main
 
+cd C:\xampp\htdocs\Project\NokshiGhor\frontend
+npm.cmd run dev -- --host 127.0.0.1
 
-
+.\backend\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --app-dir backend
 
 {
   "email": "indranilbiswas1996@gmail.com",
@@ -73,17 +75,82 @@ Monitor Employees	Yes
 পরবর্তী Development
 আমার প্রস্তাব, এবার Branch Management শুরু করা।
 
-এর মধ্যে থাকবে:
-- Owner একাধিক Branch তৈরি করতে পারবেন।
-- Branch List ও Branch Details।
-- Branch Edit — Branch delete নয়।
-- Branch Admin ও Employee assignment-এর ভিত্তি তৈরি।
-- প্রতিটি Branch-এর Business ownership নিশ্চিত করা।
-একটি Business-এর একাধিক Branch থাকতে পারবে।
-Owner নিজের Business-এর সব Branch দেখতে ও পরিচালনা করতে পারবেন।
-Owner Branch তৈরি ও Edit করতে পারবেন, কিন্তু Delete করতে পারবেন না।
-একটি Branch-এ একাধিক Branch Admin ও Employee থাকতে পারবেন।
-Branch Admin শুধুমাত্র তাঁকে Assign করা Branch দেখতে পারবেন।
-Employee-কে এক Branch থেকে অন্য Branch-এ Transfer করা যাবে।
-Branch, Admin ও Owner-এর গুরুত্বপূর্ণ Record Hard Delete করা যাবে না।
-Branch Assignment, Employee Transfer এবং Permission পরিবর্তনের Audit Log রাখতে হবে।
+Branch Management — Development Topics
+Completed
+ 1. Branch List
+- Business-এর সব Branch দেখা
+- Branch details ও status দেখা
+- Main Branch চিহ্নিত করা
+Completed
+ 2. Create Branch
+- নতুন Branch তৈরি
+- Branch Name, Code, Address, Phone, Email
+- Duplicate Name/Code validation
+Completed
+ 3. Edit Branch
+- Branch information update
+- Duplicate validation
+- Audit Log
+Completed
+ 4. Activate / Deactivate Branch
+- Branch Activate
+- Branch Deactivate
+- Main Branch Deactivation বন্ধ
+- Last Active Branch Deactivation বন্ধ
+- Audit Log
+Pending
+ 5. Default Branch Management
+- অন্য Branch-কে Default করা
+- আগের Default Branch স্বয়ংক্রিয়ভাবে পরিবর্তন
+- এক Business-এ একটিমাত্র Default Branch
+- Inactive Branch Default করা নিষিদ্ধ
+Pending
+ 6. Branch Details / Profile
+- Branch-এর সম্পূর্ণ তথ্য
+- Branch Summary
+- Branch-specific information
+Pending
+ 7. Branch Admin Assignment
+- এক Branch-এ একাধিক Admin
+- Admin Assign / Reassign
+- Admin-এর Branch access নিয়ন্ত্রণ
+Pending
+ 8. Employee Assignment
+- Employee-কে Branch-এ Assign
+- Employee Transfer
+- পুরোনো Branch access revoke
+- নতুন Branch access enable
+- Transfer History ও Audit Log
+Pending
+ 9. Branch-wise Data Isolation
+- Branch-wise Sales
+- Branch-wise Purchase
+- Branch-wise Stock
+- Branch-wise Accounts
+- Branch-wise Reports
+- অন্য Branch-এর Data access বন্ধ
+Pending
+ 10. Branch Operational Restrictions
+- Inactive Branch-এ নতুন transaction বন্ধ
+- Inactive Branch-এর existing history সংরক্ষণ
+- Branch deactivate করার আগে প্রয়োজনীয় validation
+Pending
+ 11. Branch-wise Dashboard & Reports
+- Branch-wise Sales Summary
+- Profit/Loss
+- Stock Summary
+- Employee Performance
+- Business-wide consolidated reports
+Recommended Development Order
+Priority	Topic
+1	Default Branch Management
+2	Branch Details / Profile
+3	Branch Admin Assignment
+4	Employee Assignment & Transfer
+5	Branch-wise Data Isolation
+6	Operational Restrictions
+7	Dashboard & Reports
+
+আমার পরামর্শ: প্রথমে Branch Management-এর ১–৮ নম্বর সম্পূর্ণ করি। এরপর Sales, Inventory, Purchase এবং Accounts-এর সঙ্গে Branch Integration করব।
+
+প্রতিটি Feature-এ আমাদের নিয়ম থাকবে: Backend → Frontend → API Connection → Testing। অপ্রয়োজনীয় অতিরিক্ত কাজ না করে দ্রুত এগোব।

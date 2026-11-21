@@ -376,7 +376,12 @@
   cursor: not-allowed;
   opacity: 0.6;
 }
-
+.branch-icon-button:disabled:hover {
+  background: #f1f5f9;
+  color: #94a3b8;
+  border-color: #cbd5e1;
+  cursor: not-allowed;
+}
 @media (max-width: 600px) {
   .branch-heading-actions {
     width: 100%;
@@ -535,4 +540,70 @@
 .owner-profile-edit textarea:disabled {
   background: #f8fafc;
   cursor: not-allowed;
+}
+/* Fix branch action buttons without page overflow */
+.branch-list,
+.branch-list-item,
+.branch-details {
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.branch-card-actions {
+  display: grid;
+  
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  margin-top: 10px;
+}
+
+.branch-card-actions .branch-icon-button {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
+  padding: 7px 5px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  box-sizing: border-box;
+  font-size: 11px;
+}
+
+@media (max-width: 400px) {
+  .branch-card-actions {
+    gap: 5px;
+  }
+
+  .branch-card-actions .branch-icon-button {
+    font-size: 10px;
+    padding: 7px 3px;
+  }
+}
+/* Edit Branch - Blue hover */
+.branch-card-actions .branch-icon-button:first-child:hover:not(:disabled) {
+  background: #dbeafe;
+  color: #1d4ed8;
+  border-color: #93c5fd;
+}
+
+/* Activate Branch - Green hover */
+.branch-card-actions .branch-icon-button:has(svg.lucide-circle-check):hover:not(:disabled) {
+  background: #dcfce7;
+  color: #15803d;
+  border-color: #86efac;
+}
+
+/* Deactivate Branch - Red hover */
+.branch-card-actions .branch-icon-button:has(svg.lucide-circle-x):hover:not(:disabled) {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-color: #fca5a5;
+}
+
+/* Disabled button */
+.branch-card-actions .branch-icon-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
 }

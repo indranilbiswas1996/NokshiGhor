@@ -41,24 +41,22 @@ export default function BranchManagement({
   const [error, setError] = useState('')
   const [showCreateForm, setShowCreateForm] = useState(false)
 
-const [createBranchSubmitting, setCreateBranchSubmitting] = useState(false)
-const [createBranchError, setCreateBranchError] = useState('')
+  const [createBranchSubmitting, setCreateBranchSubmitting] = useState(false)
+  const [createBranchError, setCreateBranchError] = useState('')
+  const [statusUpdatingId, setStatusUpdatingId] = useState<string | null>(null)
+  const [defaultUpdatingId, setDefaultUpdatingId] = useState<string | null>(null)
+  const [createBranchData, setCreateBranchData] = useState({
+    branch_name: '',
+    branch_code: '',
+    address: '',
+    phone: '',
+    email: '',
+  })
 
-const [createBranchData, setCreateBranchData] = useState({
-  branch_name: '',
-  branch_code: '',
-  address: '',
-  phone: '',
-  email: '',
-})
-
-  const [editingBranch, setEditingBranch] = useState<Branch | null>(null)
-
-    const [showEditBranch, setShowEditBranch] = useState(false)
-    
+    const [editingBranch, setEditingBranch] = useState<Branch | null>(null)
+    const [showEditBranch, setShowEditBranch] = useState(false)    
     const [branchEditSubmitting, setBranchEditSubmitting] = useState(false)
     const [branchEditError, setBranchEditError] = useState('')
-
     const [branchEditData, setBranchEditData] = useState({
     branch_name: '',
     branch_code: '',
@@ -142,7 +140,73 @@ const handleSaveBranch = async () => {
   }
 }
 
+const handleToggleBranchStatus = async (branch: Branch) => {
+  const nextStatus = !branch.is_active
 
+  const confirmed = window.confirm(
+    nextStatus
+      ? `Are you sure you want to activate ${branch.branch_name}?`
+      : `Are you sure you want to deactivate ${branch.branch_name}?`
+  )
+
+  if (!confirmed) return
+
+  setStatusUpdatingId(branch.id)
+  setError('')
+
+  try {
+    const response = await branchApi.setBranchStatus(
+      branch.id,
+      nextStatus
+    )
+
+    setBranches((current) =>
+      current.map((item) =>
+        item.id === branch.id ? response.branch : item
+      )
+    )
+  } catch (error) {
+    const message = isAxiosError(error)
+      ? error.response?.data?.detail || 'Unable to update branch status.'
+      : 'Unable to update branch status.'
+
+    setError(message)
+  } finally {
+    setStatusUpdatingId(null)
+  }
+}
+
+const handleSetDefaultBranch = async (branch: Branch) => {
+  if (!branch.is_active || branch.is_default) return
+
+  const confirmed = window.confirm(
+    `Are you sure you want to set ${branch.branch_name} as the Default Branch?`
+  )
+
+  if (!confirmed) return
+
+  setDefaultUpdatingId(branch.id)
+  setError('')
+
+  try {
+    const response = await branchApi.setDefaultBranch(branch.id)
+
+    setBranches((current) =>
+      current.map((item) => ({
+        ...item,
+        is_default: item.id === response.branch.id,
+      }))
+    )
+  } catch (error) {
+    const message = isAxiosError(error)
+      ? error.response?.data?.detail || 'Unable to change default branch.'
+      : 'Unable to change default branch.'
+
+    setError(message)
+  } finally {
+    setDefaultUpdatingId(null)
+  }
+}
 const handleCreateBranch = async () => {
   if (!createBranchData.branch_name.trim()) {
     setCreateBranchError(
@@ -708,7 +772,7 @@ const handleCreateBranch = async () => {
                     {bengali ? 'তৈরি হয়েছে: ' : 'Created: '}
                     {formatDate(branch.created_at)}
                   </small>
-                                    <div className="branch-card-actions">
+                    <div className="branch-card-actions">
                     <button
                       type="button"
                       className="branch-icon-button"
@@ -717,6 +781,67 @@ const handleCreateBranch = async () => {
                     >
                       <Pencil size={16} />
                       {bengali ? 'সম্পাদনা' : 'Edit'}
+                    </button>
+
+                    <button
+                      type="button"
+                      className="branch-icon-button"
+                      onClick={() => handleToggleBranchStatus(branch)}
+                      disabled={
+                        statusUpdatingId === branch.id ||
+                        (branch.is_default && branch.is_active)
+                      }
+                      title={
+                        branch.is_default && branch.is_active
+                          ? 'Main Branch cannot be deactivated'
+                          : statusUpdatingId === branch.id
+                            ? 'Please wait...'
+                            : branch.is_active
+                              ? 'Deactivate Branch'
+                              : 'Activate Branch'
+                      }
+                    >
+                    {statusUpdatingId === branch.id ? (
+                        <LoaderCircle size={15} />
+                      ) : branch.is_active ? (
+                        <XCircle size={15} />
+                      ) : (
+                        <CheckCircle2 size={15} />
+                      )}
+
+                      {statusUpdatingId === branch.id
+                        ? 'Updating...'
+                        : branch.is_active
+                          ? 'Deactivate Branch'
+                          : 'Activate Branch'}
+                    </button>
+                    <button
+                      type="button"
+                      className="branch-icon-button"
+                      onClick={() => handleSetDefaultBranch(branch)}
+                      disabled={
+                        !branch.is_active ||
+                        branch.is_default ||
+                        defaultUpdatingId === branch.id
+                      }
+                      title={
+                        !branch.is_active
+                          ? 'Inactive branch cannot be default'
+                          : branch.is_default
+                            ? 'This is already the Default Branch'
+                            : 'Set as Default Branch'
+                      }
+                    >
+                      {defaultUpdatingId === branch.id ? (
+                        <LoaderCircle size={15} />
+                      ) : (
+                        <CheckCircle2 size={15} />
+                      )}
+                      {defaultUpdatingId === branch.id
+                        ? 'Updating...'
+                        : branch.is_default
+                          ? 'Default Branch'
+                          : 'Set Default'}
                     </button>
                   </div>
                 </div>

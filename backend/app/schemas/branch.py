@@ -45,3 +45,6 @@ class BranchUpdateRequest(BaseModel):
     address: str | None = None
     phone: str | None = Field(default=None, max_length=30)
     email: str | None = Field(default=None, max_length=254)
+
+class BranchStatusUpdateRequest(BaseModel):
+    is_active: bool
