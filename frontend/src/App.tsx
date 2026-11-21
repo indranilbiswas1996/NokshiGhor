@@ -2,7 +2,7 @@ import { authApi } from './api/auth'
 import { useState, useEffect, useRef, useCallback, type CSSProperties } from 'react'
 import {
   LayoutDashboard, Package, Boxes, ShoppingCart, ShoppingBag,
-  Wallet, BriefcaseBusiness, ReceiptText, Users, Settings,
+  Wallet, BriefcaseBusiness, ReceiptText, Users, GitBranch, Settings,
   Bell, Search, Menu, X, TrendingUp,
   ArrowUpRight, CalendarDays, Plus,
   ChevronDown, Zap, Languages, CircleHelp, Palette, LogOut
@@ -16,7 +16,7 @@ import NewSaleForm from './components/NewSaleForm'
 import SaleDetails from './components/SaleDetails'
 import OpeningStock from './components/OpeningStock'
 import OwnerManagement from './components/OwnerManagement'
-
+import BranchManagement from './components/BranchManagement'
 const navigation = [
   { title: 'Overview', bn: 'সারসংক্ষেপ', items: [
     { label: 'Dashboard', bn: 'ড্যাশবোর্ড', icon: LayoutDashboard },
@@ -33,6 +33,7 @@ const navigation = [
     { label: 'Projects', bn: 'প্রজেক্ট', icon: BriefcaseBusiness },
     { label: 'Tax Management', bn: 'ট্যাক্স', icon: ReceiptText },
     { label: 'Owner Management', bn: 'মালিক ব্যবস্থাপনা', icon: Users },
+    { label: 'Branch Management', bn: 'শাখা ব্যবস্থাপনা', icon: GitBranch },
   ]},
 ]
 
@@ -234,6 +235,7 @@ useEffect(() => {
     'Tax Management': 'ট্যাক্স ব্যবস্থাপনা',
     Settings: 'সেটিংস',
     'Owner Management': 'মালিক ব্যবস্থাপনা',
+    'Branch Management': 'শাখা ব্যবস্থাপনা',
   }
 
   const stats = [
@@ -415,7 +417,7 @@ if (!authenticatedBusiness) {
           {activePage !== 'Dashboard' &&
             activePage !== 'Sales & POS' &&
             activePage !== 'Inventory' &&
-            activePage !== 'Owner Management' && (
+            activePage !== 'Owner Management' && activePage !== 'Branch Management' && (
               <div className="page-notice">
                 <strong>{bengali ? pageNames[activePage] : activePage}</strong>
                 <span>
@@ -427,6 +429,9 @@ if (!authenticatedBusiness) {
             )}
           {activePage === 'Owner Management' && (
             <OwnerManagement bengali={bengali} />
+          )}
+          {activePage === 'Branch Management' && (
+            <BranchManagement bengali={bengali} />
           )}
           {activePage === 'Inventory' && !isCreatingOpeningStock && (
             <section className="panel transactions-panel">

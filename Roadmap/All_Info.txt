@@ -1,13 +1,12 @@
-
-
-
-
-
-
-
-
-
-
+cd C:\xampp\htdocs\Project\NokshiGhor
+git status
+git branch --show-current
+git remote -v
+git status --short
+git add .
+git status
+git commit -m "Complete owner management and profile update"
+git push -u origin main
 
 
 
@@ -17,9 +16,14 @@
   "password": "123456789012"
 }
 
-docker cp .\backend\migrations\sql\041_owner_profile_update.sql.sql nokshighor-postgres:/tmp/041_owner_profile_update.sql.sql
-docker exec -e PGPASSWORD="$((docker exec nokshighor-postgres printenv POSTGRES_PASSWORD) -join '')" nokshighor-postgres psql -v ON_ERROR_STOP=1 -U nokshighor_user -d nokshighor_db -f /tmp/041_owner_profile_update.sql.sql
+docker cp .\backend\migrations\sql\042_branch_management.sql.sql nokshighor-postgres:/tmp/042_branch_management.sql.sql
+docker exec -e PGPASSWORD="$((docker exec nokshighor-postgres printenv POSTGRES_PASSWORD) -join '')" nokshighor-postgres psql -v ON_ERROR_STOP=1 -U nokshighor_user -d nokshighor_db -f /tmp/042_branch_management.sql.sql
 
+
+$env:PGPASSWORD = (docker exec nokshighor-postgres printenv POSTGRES_PASSWORD).Trim()
+Get-Content .\backend\migrations\sql\042_branch_management.sql -Raw |
+docker exec -e "PGPASSWORD=$env:PGPASSWORD" -i nokshighor-postgres psql -U nokshighor_user -d nokshighor_db -v ON_ERROR_STOP=1 -f -
+Remove-Item Env:\PGPASSWORD -ErrorAction SilentlyContinue
 
 Owner: এক বা একাধিক।
 Branch: একাধিক।
