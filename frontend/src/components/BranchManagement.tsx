@@ -15,11 +15,15 @@ import {
   Pencil,
   X,
   Save,
+  UserPlus,
+  Users,
 } from 'lucide-react'
 import { branchApi } from '../api/branch'
 import type { Branch } from '../api/branch'
 import './BranchManagement.css'
-
+import BranchAdminAssignment from './BranchAdminAssignment'
+import BranchAdminList from './BranchAdminList'
+import MasterBranchAdminList from './MasterBranchAdminList'
 interface BranchManagementProps {
   bengali?: boolean
 }
@@ -45,6 +49,7 @@ export default function BranchManagement({
   const [createBranchError, setCreateBranchError] = useState('')
   const [statusUpdatingId, setStatusUpdatingId] = useState<string | null>(null)
   const [defaultUpdatingId, setDefaultUpdatingId] = useState<string | null>(null)
+  const [viewingMasterBranchAdmins, setViewingMasterBranchAdmins] =  useState(false)
   const [createBranchData, setCreateBranchData] = useState({
     branch_name: '',
     branch_code: '',
@@ -54,9 +59,12 @@ export default function BranchManagement({
   })
 
     const [editingBranch, setEditingBranch] = useState<Branch | null>(null)
+    const [viewingBranch, setViewingBranch] = useState<Branch | null>(null)
     const [showEditBranch, setShowEditBranch] = useState(false)    
     const [branchEditSubmitting, setBranchEditSubmitting] = useState(false)
     const [branchEditError, setBranchEditError] = useState('')
+    const [assigningAdminBranch, setAssigningAdminBranch] =  useState<Branch | null>(null)
+    const [viewingBranchAdmins, setViewingBranchAdmins] = useState<Branch | null>(null)
     const [branchEditData, setBranchEditData] = useState({
     branch_name: '',
     branch_code: '',
@@ -307,7 +315,14 @@ const handleCreateBranch = async () => {
             <Plus size={17} />
             {bengali ? 'নতুন শাখা' : 'Create Branch'}
           </button>
-
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => setViewingMasterBranchAdmins(true)}
+          >
+            <Users size={18} />
+            Master Branch Admins
+          </button>
           <button
             type="button"
             className="branch-refresh"
@@ -322,6 +337,125 @@ const handleCreateBranch = async () => {
           </button>
         </div>
       </div>
+
+{viewingBranch && (
+  <div
+    className="owner-modal-overlay"
+    onClick={() => setViewingBranch(null)}
+  >
+    <div
+      className="owner-profile-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="branch-details-title"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="owner-modal-header">
+        <div>
+          <h3 id="branch-details-title">
+            {bengali ? 'শাখার বিস্তারিত তথ্য' : 'Branch Details'}
+          </h3>
+          <p>
+            {bengali
+              ? 'শাখার সম্পূর্ণ প্রোফাইল'
+              : 'Complete branch profile information'}
+          </p>
+        </div>
+
+        <button
+          type="button"
+          className="owner-close-button"
+          onClick={() => setViewingBranch(null)}
+        >
+          <X size={18} />
+        </button>
+      </div>
+
+      <div className="branch-profile-details">
+        <div>
+          <span>{bengali ? 'শাখার নাম' : 'Branch Name'}</span>
+          <strong>{viewingBranch.branch_name}</strong>
+        </div>
+
+        <div>
+          <span>{bengali ? 'শাখা কোড' : 'Branch Code'}</span>
+          <strong>{viewingBranch.branch_code || '—'}</strong>
+        </div>
+
+        <div>
+          <span>{bengali ? 'ঠিকানা' : 'Address'}</span>
+          <strong>{viewingBranch.address || '—'}</strong>
+        </div>
+
+        <div>
+          <span>{bengali ? 'ফোন নম্বর' : 'Phone Number'}</span>
+          <strong>{viewingBranch.phone || '—'}</strong>
+        </div>
+
+        <div>
+          <span>Email</span>
+          <strong>{viewingBranch.email || '—'}</strong>
+        </div>
+
+        <div>
+          <span>{bengali ? 'শাখার অবস্থা' : 'Branch Status'}</span>
+          <strong>
+            {viewingBranch.is_active
+              ? (bengali ? 'সক্রিয়' : 'Active')
+              : (bengali ? 'নিষ্ক্রিয়' : 'Inactive')}
+          </strong>
+        </div>
+
+        <div>
+          <span>{bengali ? 'Default Branch' : 'Default Branch'}</span>
+          <strong>
+            {viewingBranch.is_default
+              ? (bengali ? 'হ্যাঁ' : 'Yes')
+              : (bengali ? 'না' : 'No')}
+          </strong>
+        </div>
+
+        <div>
+          <span>{bengali ? 'তৈরির তারিখ' : 'Created Date'}</span>
+          <strong>{formatDate(viewingBranch.created_at)}</strong>
+        </div>
+
+        <div>
+          <span>{bengali ? 'সর্বশেষ আপডেট' : 'Last Updated'}</span>
+          <strong>
+            {viewingBranch.updated_at
+              ? formatDate(viewingBranch.updated_at)
+              : '—'}
+          </strong>
+        </div>
+      </div>
+
+      <div className="owner-profile-actions">
+        <button
+          type="button"
+          className="owner-profile-cancel"
+          onClick={() => setViewingBranch(null)}
+        >
+          <X size={15} />
+          {bengali ? 'বন্ধ করুন' : 'Close'}
+        </button>
+
+        <button
+          type="button"
+          className="owner-profile-save"
+          onClick={() => {
+            const branch = viewingBranch
+            setViewingBranch(null)
+            handleEditBranch(branch)
+          }}
+        >
+          <Pencil size={15} />
+          {bengali ? 'সম্পাদনা করুন' : 'Edit Branch'}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
       
 {showEditBranch && editingBranch && (
   <div
@@ -366,7 +500,6 @@ const handleCreateBranch = async () => {
           <X size={18} />
         </button>
       </div>
-
       {branchEditError && (
         <div className="page-notice" role="alert">
           {branchEditError}
@@ -773,6 +906,37 @@ const handleCreateBranch = async () => {
                     {formatDate(branch.created_at)}
                   </small>
                     <div className="branch-card-actions">
+                      <button
+                        type="button"
+                        className="branch-icon-button"
+                        onClick={() => setViewingBranch(branch)}
+                        title={bengali ? 'শাখার বিস্তারিত দেখুন' : 'View Branch Details'}
+                      >
+                        <GitBranch size={16} />
+                        {bengali ? 'বিস্তারিত' : 'View Details'}
+                      </button>
+                      <button
+                        type="button"
+                        className="branch-icon-button"
+                        onClick={() => setViewingBranchAdmins(branch)}
+                        title="View Branch Admins"
+                      >
+                        <Users size={16} />
+                        {bengali ? 'Branch Admins' : 'Branch Admins'}
+                      </button>
+                      {branch.is_active && (
+                        <button
+                          type="button"
+                          className="branch-icon-button"
+                          title="Assign Branch Admin"
+                          aria-label={`Assign Branch Admin to ${branch.branch_name}`}
+                          onClick={() => setAssigningAdminBranch(branch)}
+                        >
+                          <UserPlus size={18} />
+                          {bengali ? 'Add Admin' : 'Add Admin'}
+                        </button>
+                      )}
+                      {branch.is_active && (
                     <button
                       type="button"
                       className="branch-icon-button"
@@ -782,7 +946,7 @@ const handleCreateBranch = async () => {
                       <Pencil size={16} />
                       {bengali ? 'সম্পাদনা' : 'Edit'}
                     </button>
-
+                      )}
                     <button
                       type="button"
                       className="branch-icon-button"
@@ -815,6 +979,7 @@ const handleCreateBranch = async () => {
                           ? 'Deactivate Branch'
                           : 'Activate Branch'}
                     </button>
+                    
                     <button
                       type="button"
                       className="branch-icon-button"
@@ -850,6 +1015,28 @@ const handleCreateBranch = async () => {
           </div>
         )}
       </div>
+      {viewingBranchAdmins && (
+        <BranchAdminList
+          branchId={viewingBranchAdmins.id}
+          branchName={viewingBranchAdmins.branch_name}
+          onClose={() => setViewingBranchAdmins(null)}
+        />
+      )}
+      {assigningAdminBranch && (
+        <BranchAdminAssignment
+          branchId={assigningAdminBranch.id}
+          branchName={assigningAdminBranch.branch_name}
+          onClose={() => setAssigningAdminBranch(null)}
+          onAssigned={() => {
+            void loadBranches(true)
+          }}
+        />
+      )}
+      {viewingMasterBranchAdmins && (
+        <MasterBranchAdminList
+          onClose={() => setViewingMasterBranchAdmins(false)}
+        />
+      )}
     </section>
   )
 }

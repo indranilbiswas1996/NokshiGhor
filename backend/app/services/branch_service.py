@@ -3,7 +3,7 @@ from fastapi import HTTPException
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
-
+from app.core.security import hash_password
 
 def get_branches(
     db: Session,
@@ -331,3 +331,275 @@ def set_default_branch(
             status_code=status_code,
             detail=message.split("\n")[0],
         ) from exc
+
+def assign_branch_admin(
+    db: Session,
+    business_id: str,
+    actor_user_id: str,
+    branch_id: str,
+    business_user_id: str,
+    notes: str | None = None,
+):
+    try:
+        result = db.execute(
+            text("""
+                SELECT *
+                FROM public.fn_branch_assign_admin(
+                    CAST(:business_id AS UUID),
+                    CAST(:actor_user_id AS UUID),
+                    CAST(:branch_id AS UUID),
+                    CAST(:business_user_id AS UUID),
+                    :notes
+                )
+            """),
+            {
+                "business_id": business_id,
+                "actor_user_id": actor_user_id,
+                "branch_id": branch_id,
+                "business_user_id": business_user_id,
+                "notes": notes,
+            },
+        ).mappings().one()
+
+        db.commit()
+        return dict(result)
+
+    except HTTPException:
+        db.rollback()
+        raise
+
+    except SQLAlchemyError as exc:
+        db.rollback()
+
+        message = "Unable to assign Branch Admin."
+
+        if getattr(exc, "orig", None) is not None:
+            message = (
+                getattr(getattr(exc.orig, "diag", None), "message_primary", None)
+                or str(exc.orig)
+            ).split("\nCONTEXT:")[0]
+
+        if "already assigned" in message.lower():
+            raise HTTPException(status_code=409, detail=message)
+
+        if "only an active business owner" in message.lower():
+            raise HTTPException(status_code=403, detail=message)
+
+        if "inactive or does not belong" in message.lower():
+            raise HTTPException(status_code=404, detail=message)
+
+        if "not an active branch admin" in message.lower():
+            raise HTTPException(status_code=400, detail=message)
+
+        raise HTTPException(status_code=400, detail=message)
+
+def get_branch_admin_candidates(
+    db: Session,
+    business_id: str,
+    actor_user_id: str,
+    branch_id: str,
+):
+    try:
+        result = db.execute(
+            text("""
+                SELECT *
+                FROM public.fn_branch_admin_candidates(
+                    CAST(:business_id AS UUID),
+                    CAST(:actor_user_id AS UUID),
+                    CAST(:branch_id AS UUID)
+                )
+            """),
+            {
+                "business_id": business_id,
+                "actor_user_id": actor_user_id,
+                "branch_id": branch_id,
+            },
+        )
+
+        candidates = [
+            dict(row)
+            for row in result.mappings().all()
+        ]
+
+        return {"candidates": candidates}
+
+    except SQLAlchemyError as exc:
+        db.rollback()
+        error_message = str(exc.orig).lower() if exc.orig else str(exc).lower()
+
+        if "only an active owner" in error_message:
+            raise HTTPException(
+                status_code=403,
+                detail="Only an active Owner can view Branch Admin candidates.",
+            )
+
+        if "active branch not found" in error_message:
+            raise HTTPException(
+                status_code=404,
+                detail="Active Branch not found.",
+            )
+
+        if "business not found or inactive" in error_message:
+            raise HTTPException(
+                status_code=404,
+                detail="Business not found or inactive.",
+            )
+
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to load Branch Admin candidates.",
+        )
+def create_branch_admin(
+    db: Session,
+    business_id: str,
+    actor_user_id: str,
+    full_name: str,
+    email: str,
+    phone: str | None,
+    password: str,
+):
+    try:
+        password_hash = hash_password(password)
+
+        result = db.execute(
+            text("""
+                SELECT public.fn_branch_admin_add(
+                    CAST(:business_id AS UUID),
+                    CAST(:actor_user_id AS UUID),
+                    :full_name,
+                    :email,
+                    :phone,
+                    :password_hash
+                )
+            """),
+            {
+                "business_id": business_id,
+                "actor_user_id": actor_user_id,
+                "full_name": full_name,
+                "email": email,
+                "phone": phone,
+                "password_hash": password_hash,
+            },
+        )
+
+        admin = result.scalar_one()
+        db.commit()
+
+        return {"admin": admin}
+
+    except SQLAlchemyError as exc:
+        db.rollback()
+        error_message = str(exc.orig).lower() if exc.orig else str(exc).lower()
+        print("BRANCH ADMIN DATABASE ERROR:", repr(exc.orig or exc))
+        if "only an active owner" in error_message:
+            raise HTTPException(
+                status_code=403,
+                detail="Only an active Owner can create a Branch Admin.",
+            )
+        if "business not found or inactive" in error_message:
+            raise HTTPException(status_code=404, detail="Business not found or inactive.")
+        if "already has a membership" in error_message:
+            raise HTTPException(status_code=409, detail="User already belongs to this Business.")
+        if "branch admin role not configured" in error_message:
+            raise HTTPException(status_code=400, detail="Branch Admin role is not configured.")
+        if "name and email are required" in error_message:
+            raise HTTPException(status_code=400, detail="Name and email are required.")
+
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to create Branch Admin.",
+        )
+
+
+def get_branch_admins(
+    db: Session,
+    business_id: str,
+    actor_user_id: str,
+    branch_id: str,
+):
+    try:
+        result = db.execute(
+            text("""
+                SELECT *
+                FROM public.fn_branch_admin_list(
+                    CAST(:business_id AS UUID),
+                    CAST(:actor_user_id AS UUID),
+                    CAST(:branch_id AS UUID)
+                )
+            """),
+            {
+                "business_id": business_id,
+                "actor_user_id": actor_user_id,
+                "branch_id": branch_id,
+            },
+        )
+
+        admins = [dict(row) for row in result.mappings().all()]
+
+        return {"admins": admins}
+
+    except SQLAlchemyError as exc:
+        db.rollback()
+        error_message = str(exc.orig or exc)
+
+        if "Only an active Business Owner" in error_message:
+            raise HTTPException(
+                status_code=403,
+                detail="Only an active Business Owner can view Branch Admins.",
+            )
+
+        if "Branch not found" in error_message:
+            raise HTTPException(
+                status_code=404,
+                detail="Branch not found.",
+            )
+
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to load Branch Admins.",
+        )
+def get_master_branch_admins(
+    db: Session,
+    business_id: str,
+    actor_user_id: str,
+):
+    try:
+        result = db.execute(
+            text("""
+                SELECT *
+                FROM public.fn_master_branch_admin_list(
+                    CAST(:business_id AS UUID),
+                    CAST(:actor_user_id AS UUID)
+                )
+            """),
+            {
+                "business_id": business_id,
+                "actor_user_id": actor_user_id,
+            },
+        ).mappings().all()
+
+        return {
+            "admins": [dict(row) for row in result]
+        }
+
+    except SQLAlchemyError as exc:
+        db.rollback()
+
+        error_message = str(getattr(exc, "orig", exc))
+
+        if "Only an active Business Owner" in error_message:
+            raise HTTPException(
+                status_code=403,
+                detail="Only an active Business Owner can view Master Branch Admins.",
+            )
+
+        if "Business is inactive or unavailable" in error_message:
+            raise HTTPException(
+                status_code=404,
+                detail="Business is inactive or unavailable.",
+            )
+
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to load Master Branch Admins.",
+        )

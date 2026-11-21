@@ -551,14 +551,23 @@
 
 .branch-card-actions {
   display: grid;
-  
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
   width: 100%;
   min-width: 0;
   margin-top: 10px;
 }
+@media (max-width: 768px) {
+  .branch-card-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
 
+@media (max-width: 400px) {
+  .branch-card-actions {
+    grid-template-columns: 1fr;
+  }
+}
 .branch-card-actions .branch-icon-button {
   width: 100%;
   min-width: 0;
@@ -606,4 +615,162 @@
 .branch-card-actions .branch-icon-button:disabled {
   cursor: not-allowed;
   opacity: 0.65;
+}
+
+.branch-profile-details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  padding: 20px 0;
+}
+
+.branch-profile-details > div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+}
+
+.branch-profile-details span {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.branch-profile-details strong {
+  color: #1e293b;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 500px) {
+  .branch-profile-details {
+    grid-template-columns: 1fr;
+  }
+}
+/* Branch Admin Assignment Modal */
+.owner-profile-modal select,
+.owner-profile-modal input,
+.owner-profile-modal textarea {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+}
+
+.owner-profile-modal select {
+  min-height: 42px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color, #d1d5db);
+  border-radius: 8px;
+  background-color: #fff;
+  color: inherit;
+  outline: none;
+  cursor: pointer;
+}
+
+.owner-profile-modal select:focus,
+.owner-profile-modal input:focus,
+.owner-profile-modal textarea:focus {
+  border-color: var(--primary-color, #6366f1);
+  outline: none;
+}
+
+.owner-profile-modal .owner-profile-edit {
+  gap: 18px;
+}
+
+.owner-profile-modal .owner-profile-edit > div {
+  min-width: 0;
+}
+
+.owner-profile-modal .owner-profile-edit label {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.owner-profile-modal .owner-profile-actions button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.owner-profile-modal .owner-profile-edit textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+/* Admin Setup Toggle - Center Alignment */
+/* Admin Setup Toggle Buttons */
+.owner-profile-edit .owner-profile-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Common Button Styling */
+.owner-profile-edit .owner-profile-actions button {
+  min-height: 38px;
+  padding: 9px 15px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  transition: opacity 0.2s ease, background 0.2s ease;
+  cursor: pointer;
+}
+
+/* Selected Button */
+.owner-profile-edit .owner-profile-actions button:disabled {
+  background: var(--accent) !important;
+  border: 1px solid var(--accent) !important;
+  color: #fff !important;
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+/* Unselected Button */
+.owner-profile-edit .owner-profile-actions button:not(:disabled) {
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border-color, #d1d5db);
+  color: var(--text-secondary, #777);
+  opacity: 0.55;
+  cursor: pointer;
+}
+
+/* Unselected Hover */
+
+.owner-profile-edit .owner-profile-actions button:not(:disabled):hover {
+  opacity: 0.75;
+}
+
+.btn.btn-secondary {
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  color: #fff;
+  border-radius: 9px;
+  padding: 10px 20px;
+  font-weight: 600;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 5px
+    color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.btn.btn-secondary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 88%, #000);
+  border-color: color-mix(in srgb, var(--accent) 88%, #000);
+  color: #fff;
+  box-shadow: 0 4px 9px
+    color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+.btn.btn-secondary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.btn.btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }

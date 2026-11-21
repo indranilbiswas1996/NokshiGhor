@@ -98,13 +98,13 @@ Completed
 - Main Branch Deactivation বন্ধ
 - Last Active Branch Deactivation বন্ধ
 - Audit Log
-Pending
+Completed
  5. Default Branch Management
 - অন্য Branch-কে Default করা
 - আগের Default Branch স্বয়ংক্রিয়ভাবে পরিবর্তন
 - এক Business-এ একটিমাত্র Default Branch
 - Inactive Branch Default করা নিষিদ্ধ
-Pending
+Completed
  6. Branch Details / Profile
 - Branch-এর সম্পূর্ণ তথ্য
 - Branch Summary

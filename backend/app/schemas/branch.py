@@ -48,3 +48,25 @@ class BranchUpdateRequest(BaseModel):
 
 class BranchStatusUpdateRequest(BaseModel):
     is_active: bool
+class BranchAdminAssignmentRequest(BaseModel):
+    business_user_id: UUID
+    notes: str | None = None
+
+
+class BranchAdminAssignmentResponse(BaseModel):
+    assignment: dict
+
+class BranchAdminCreateRequest(BaseModel):
+    full_name: str
+    email: str
+    phone: str | None = None
+    password: str
+
+
+class BranchAdminCreateResponse(BaseModel):
+    admin: dict
+
+class BranchAdminListResponse(BaseModel):
+    admins: list[dict] = []
+class MasterBranchAdminListResponse(BaseModel):
+    admins: list[dict] = []

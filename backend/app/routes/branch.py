@@ -11,16 +11,27 @@ from app.schemas.branch import (
     BranchCreateRequest,
     BranchCreateResponse,
     BranchUpdateRequest,
+    BranchStatusUpdateRequest,
+    BranchAdminAssignmentRequest,
+    BranchAdminAssignmentResponse,
+    BranchAdminCreateRequest,
+    BranchAdminCreateResponse,
+    BranchAdminListResponse,
+    MasterBranchAdminListResponse,
 )
 from uuid import UUID
+from app.services import branch_service
 from app.services.branch_service import (
     get_branches,
     create_branch,
     update_branch,
     set_branch_status,
     set_default_branch,
+    assign_branch_admin,
+    get_branch_admin_candidates,
+    create_branch_admin,
 )
-from app.schemas.branch import BranchStatusUpdateRequest
+
 
 router = APIRouter(
     prefix="/branches",
@@ -109,3 +120,90 @@ def set_branch_default(
     )
 
     return {"branch": branch}
+
+
+@router.post("/{branch_id}/admins", response_model=BranchAdminAssignmentResponse)
+def create_branch_admin_assignment(
+    branch_id: UUID,
+    payload: BranchAdminAssignmentRequest,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+    current_business=Depends(get_current_business),
+):
+    assignment = assign_branch_admin(
+        db=db,
+        business_id=str(current_business["id"]),
+        actor_user_id=str(current_user["id"]),
+        branch_id=str(branch_id),
+        business_user_id=str(payload.business_user_id),
+        notes=payload.notes,
+    )
+
+    return {"assignment": assignment}
+
+
+@router.get("/{branch_id}/admin-candidates")
+def list_branch_admin_candidates(
+    branch_id: UUID,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+    current_business=Depends(get_current_business),
+):
+    return get_branch_admin_candidates(
+        db=db,
+        business_id=str(current_business["id"]),
+        actor_user_id=str(current_user["id"]),
+        branch_id=str(branch_id),
+    )
+
+@router.post(
+    "/admins",
+    response_model=BranchAdminCreateResponse,
+)
+def create_branch_admin_user(
+    payload: BranchAdminCreateRequest,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+    current_business=Depends(get_current_business),
+):
+    return create_branch_admin(
+        db=db,
+        business_id=str(current_business["id"]),
+        actor_user_id=str(current_user["id"]),
+        full_name=payload.full_name,
+        email=payload.email,
+        phone=payload.phone,
+        password=payload.password,
+    )
+
+
+@router.get(
+    "/{branch_id}/admins",
+    response_model=BranchAdminListResponse,
+)
+def get_branch_admins(
+    branch_id: UUID,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+    current_business=Depends(get_current_business),
+):
+    return branch_service.get_branch_admins(
+        db=db,
+        business_id=str(current_business["id"]),
+        actor_user_id=str(current_user["id"]),
+        branch_id=str(branch_id),
+    )
+@router.get(
+    "/master-admins",
+    response_model=MasterBranchAdminListResponse,
+)
+def get_master_branch_admins(
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+    current_business: dict = Depends(get_current_business),
+):
+    return branch_service.get_master_branch_admins(
+        db=db,
+        business_id=str(current_business["id"]),
+        actor_user_id=str(current_user["id"]),
+    )

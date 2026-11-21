@@ -1,0 +1,258 @@
+
+.branch-admin-list-modal {
+  width: min(900px, calc(100vw - 32px));
+  max-width: 900px;
+  max-height: min(86vh, 820px);
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.branch-admin-list-body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 22px 24px;
+}
+
+.branch-admin-list-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.branch-admin-list-toolbar h3 {
+  margin: 0 0 5px;
+}
+
+.branch-admin-list-toolbar span {
+  font-size: 13px;
+  opacity: 0.7;
+}
+
+.branch-admin-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 46px;
+  padding: 0 14px;
+  border: 1px solid var(--border-color, #dcdfe4);
+  border-radius: 9px;
+  color: inherit;
+}
+
+.branch-admin-search:focus-within {
+  border-color: var(--primary-color, #64748b);
+}
+
+.branch-admin-search input {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+}
+
+.branch-admin-search button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.branch-admin-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.branch-admin-card {
+  min-width: 0;
+  padding: 17px;
+  border: 1px solid var(--border-color, #e2e5e9);
+  border-radius: 11px;
+  background: var(--card-background, transparent);
+}
+
+.branch-admin-card-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  margin-bottom: 16px;
+}
+
+.branch-admin-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--primary-light, #e9edf5);
+  color: var(--primary-color, #334155);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.branch-admin-identity {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.branch-admin-identity strong {
+  overflow-wrap: anywhere;
+  font-size: 15px;
+}
+
+.branch-admin-identity span {
+  overflow-wrap: anywhere;
+  font-size: 13px;
+  opacity: 0.7;
+}
+
+.branch-admin-status {
+  flex-shrink: 0;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.branch-admin-status.active {
+  background: #e7f5ec;
+  color: #237a43;
+}
+
+.branch-admin-status.inactive {
+  background: #fceaea;
+  color: #b42318;
+}
+
+.branch-admin-card-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 13px;
+  border-top: 1px solid var(--border-color, #e2e5e9);
+}
+
+.branch-admin-card-meta span {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+  line-height: 1.5;
+  opacity: 0.8;
+}
+
+.branch-admin-card-meta svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.branch-admin-notes {
+  margin-top: 13px;
+  padding-top: 11px;
+  border-top: 1px solid var(--border-color, #e2e5e9);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.branch-admin-list-message,
+.branch-admin-list-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 180px;
+  padding: 24px;
+  text-align: center;
+  opacity: 0.75;
+}
+
+.branch-admin-list-empty strong {
+  font-size: 15px;
+}
+
+.branch-admin-list-empty span {
+  font-size: 13px;
+}
+
+.branch-admin-list-footer {
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color, #e2e5e9);
+  font-size: 12px;
+  opacity: 0.7;
+  text-align: right;
+}
+
+.branch-admin-refresh-spin {
+  animation: branch-admin-spin 1s linear infinite;
+}
+
+@keyframes branch-admin-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 700px) {
+  .branch-admin-list-modal {
+    width: calc(100vw - 20px);
+    max-height: 90vh;
+  }
+
+  .branch-admin-list-body {
+    padding: 16px;
+  }
+
+  .branch-admin-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 420px) {
+  .branch-admin-list-toolbar {
+    align-items: flex-start;
+  }
+
+  .branch-admin-card-main {
+    flex-wrap: wrap;
+  }
+}
+
+.master-admin-branch-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 0;
+  border-top: 1px solid var(--border-color, #e5e7eb);
+}
+
+.master-admin-branch-detail > span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.master-admin-branch-detail > span svg {
+  flex-shrink: 0;
+  color: var(--accent);
+}
