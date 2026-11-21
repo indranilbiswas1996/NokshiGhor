@@ -6,6 +6,7 @@ from app.routes.auth import router as auth_router
 from app.routes.sales import router as sales_router
 from app.routes.opening_stock import router as opening_stock_router
 from app.routes.tax import router as tax_router
+from app.routes.owner import router as owner_router
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
@@ -28,7 +29,7 @@ app.include_router(auth_router)
 app.include_router(sales_router)
 app.include_router(opening_stock_router)
 app.include_router(tax_router)
-
+app.include_router(owner_router)
 
 @app.get("/")
 def home():

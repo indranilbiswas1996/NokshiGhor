@@ -15,6 +15,7 @@ import type { SaleListItem } from './types/sales'
 import NewSaleForm from './components/NewSaleForm'
 import SaleDetails from './components/SaleDetails'
 import OpeningStock from './components/OpeningStock'
+import OwnerManagement from './components/OwnerManagement'
 
 const navigation = [
   { title: 'Overview', bn: 'সারসংক্ষেপ', items: [
@@ -31,6 +32,7 @@ const navigation = [
     { label: 'Accounts', bn: 'হিসাব', icon: Wallet },
     { label: 'Projects', bn: 'প্রজেক্ট', icon: BriefcaseBusiness },
     { label: 'Tax Management', bn: 'ট্যাক্স', icon: ReceiptText },
+    { label: 'Owner Management', bn: 'মালিক ব্যবস্থাপনা', icon: Users },
   ]},
 ]
 
@@ -231,6 +233,7 @@ useEffect(() => {
     Projects: 'প্রজেক্ট',
     'Tax Management': 'ট্যাক্স ব্যবস্থাপনা',
     Settings: 'সেটিংস',
+    'Owner Management': 'মালিক ব্যবস্থাপনা',
   }
 
   const stats = [
@@ -411,7 +414,8 @@ if (!authenticatedBusiness) {
           </section>
           {activePage !== 'Dashboard' &&
             activePage !== 'Sales & POS' &&
-            activePage !== 'Inventory' && (
+            activePage !== 'Inventory' &&
+            activePage !== 'Owner Management' && (
               <div className="page-notice">
                 <strong>{bengali ? pageNames[activePage] : activePage}</strong>
                 <span>
@@ -421,7 +425,9 @@ if (!authenticatedBusiness) {
                 </span>
               </div>
             )}
-
+          {activePage === 'Owner Management' && (
+            <OwnerManagement bengali={bengali} />
+          )}
           {activePage === 'Inventory' && !isCreatingOpeningStock && (
             <section className="panel transactions-panel">
               <div className="panel-header">

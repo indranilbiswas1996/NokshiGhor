@@ -1,0 +1,85 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+{
+  "email": "indranilbiswas1996@gmail.com",
+  "password": "123456789012"
+}
+
+docker cp .\backend\migrations\sql\041_owner_profile_update.sql.sql nokshighor-postgres:/tmp/041_owner_profile_update.sql.sql
+docker exec -e PGPASSWORD="$((docker exec nokshighor-postgres printenv POSTGRES_PASSWORD) -join '')" nokshighor-postgres psql -v ON_ERROR_STOP=1 -U nokshighor_user -d nokshighor_db -f /tmp/041_owner_profile_update.sql.sql
+
+
+Owner: এক বা একাধিক।
+Branch: একাধিক।
+Branch Admin: প্রতি Branch-এ এক বা একাধিক।
+Employees: একাধিক এবং Branch অনুযায়ী assigned।
+Admin-এর access: কেবল assigned Branch।
+Owner-এর access: নিজের Business-এর সব Branch।
+Admin/Branch/Owner profile deletion: নিষিদ্ধ; প্রয়োজন হলে deactivate বা access revoke করা যাবে।
+Employees Movement ও Permission Change-এর Audit Log থাকবে।
+
+Owner Management — Development Scope
+Next Module
+Feature	Requirement
+Add Owner	নতুন Owner তৈরি/যুক্ত করা
+View Owners	Business-এর সব Owner দেখা
+Edit Owner	Owner-এর তথ্য পরিবর্তন
+Inactive Owner	Owner-কে inactive করা
+Delete Owner	Not Allowed
+
+গুরুত্বপূর্ণ Business Rules:
+1. একটি Business-এ একাধিক Owner থাকতে পারবেন।
+2. Owner নিজের Profile edit করতে পারবেন।
+3. Owner-কে কখনো permanently delete করা যাবে না।
+4. Owner inactive করা যাবে, তবে তার আগের records ও audit history থাকবে।
+5. Inactive Owner Business-এর কোনো operational কাজ করতে পারবেন না।
+6. শেষ সক্রিয় Owner-কে inactive করা যাবে না—অন্য সক্রিয় Owner নিশ্চিত করতে হবে।
+7. Owner-এর permission এবং Business-এর data isolation Backend ও Database উভয় জায়গায় enforce করতে হবে।
+
+Super Admin — Full Platform Control
+Feature	Super Admin Access
+View all Businesses	Yes
+Monitor all Business activities	Yes
+Create / Edit / Manage Business	Yes
+Manage Business Owners	Yes
+Manage Branches	Yes
+Manage Branch Admins	Yes
+Monitor Employees	Yes
+----------------------------------------------------------------------------------------------------------------------------------------
+আমাদের Frontend-এ এই feature থাকবে:
+- Business-wise Owner List
+- Owner Name, Email, Phone
+- Deactivate / Reactivate Owner
+- Add Owner
+- Edit Owner
+- কোনো Owner permanently delete করা যাবে না।
+
+পরবর্তী Development
+আমার প্রস্তাব, এবার Branch Management শুরু করা।
+
+এর মধ্যে থাকবে:
+- Owner একাধিক Branch তৈরি করতে পারবেন।
+- Branch List ও Branch Details।
+- Branch Edit — Branch delete নয়।
+- Branch Admin ও Employee assignment-এর ভিত্তি তৈরি।
+- প্রতিটি Branch-এর Business ownership নিশ্চিত করা।
+একটি Business-এর একাধিক Branch থাকতে পারবে।
+Owner নিজের Business-এর সব Branch দেখতে ও পরিচালনা করতে পারবেন।
+Owner Branch তৈরি ও Edit করতে পারবেন, কিন্তু Delete করতে পারবেন না।
+একটি Branch-এ একাধিক Branch Admin ও Employee থাকতে পারবেন।
+Branch Admin শুধুমাত্র তাঁকে Assign করা Branch দেখতে পারবেন।
+Employee-কে এক Branch থেকে অন্য Branch-এ Transfer করা যাবে।
+Branch, Admin ও Owner-এর গুরুত্বপূর্ণ Record Hard Delete করা যাবে না।
+Branch Assignment, Employee Transfer এবং Permission পরিবর্তনের Audit Log রাখতে হবে।
