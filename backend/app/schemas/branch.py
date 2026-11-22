@@ -3,7 +3,7 @@ from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
-
+from typing import Any
 
 class BranchResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -70,3 +70,11 @@ class BranchAdminListResponse(BaseModel):
     admins: list[dict] = []
 class MasterBranchAdminListResponse(BaseModel):
     admins: list[dict] = []
+
+
+class BranchAdminAuditHistoryResponse(BaseModel):
+    admin: dict[str, Any]
+    current_branch_assignments: list[dict[str, Any]]
+    history: list[dict[str, Any]]
+class BranchAdminRevokeRequest(BaseModel):
+    revocation_reason: str | None = None

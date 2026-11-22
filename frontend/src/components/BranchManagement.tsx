@@ -1026,6 +1026,9 @@ const handleCreateBranch = async () => {
         <BranchAdminAssignment
           branchId={assigningAdminBranch.id}
           branchName={assigningAdminBranch.branch_name}
+          branchCode={assigningAdminBranch.branch_code}
+          branchAddress={assigningAdminBranch.address}
+          branchEmail={assigningAdminBranch.email}
           onClose={() => setAssigningAdminBranch(null)}
           onAssigned={() => {
             void loadBranches(true)

@@ -603,3 +603,83 @@ def get_master_branch_admins(
             status_code=500,
             detail="Failed to load Master Branch Admins.",
         )
+
+def get_branch_admin_audit_history(
+    db: Session,
+    business_id,
+    actor_user_id,
+    business_user_id,
+):
+    try:
+        result = db.execute(
+            text("""
+                SELECT public.fn_branch_admin_audit_history(
+                    CAST(:business_id AS UUID),
+                    CAST(:actor_user_id AS UUID),
+                    CAST(:business_user_id AS UUID)
+                )
+            """),
+            {
+                "business_id": str(business_id),
+                "actor_user_id": str(actor_user_id),
+                "business_user_id": str(business_user_id),
+            },
+        )
+
+        history = result.scalar_one()
+
+        return history
+
+    except SQLAlchemyError as exc:
+        db.rollback()
+
+        error_message = str(exc.orig)
+
+        if "Only an active Business Owner" in error_message:
+            raise HTTPException(
+                status_code=403,
+                detail="Only an active Business Owner can view Admin audit history.",
+            )
+
+        if "Branch Admin not found" in error_message:
+            raise HTTPException(
+                status_code=404,
+                detail="Branch Admin not found in this Business.",
+            )
+
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to load Branch Admin audit history.",
+        )
+def revoke_branch_admin(
+    db: Session,
+    business_id: str,
+    requester_user_id: str,
+    assignment_id: str,
+    revocation_reason: str | None = None,
+):
+    try:
+        result = db.execute(
+            text("""
+                SELECT public.fn_branch_admin_revoke(
+                    CAST(:business_id AS UUID),
+                    CAST(:requester_user_id AS UUID),
+                    CAST(:assignment_id AS UUID),
+                    :revocation_reason
+                )
+            """),
+            {
+                "business_id": business_id,
+                "requester_user_id": requester_user_id,
+                "assignment_id": assignment_id,
+                "revocation_reason": revocation_reason,
+            },
+        )
+
+        response = result.scalar_one()
+        db.commit()
+        return response
+
+    except SQLAlchemyError:
+        db.rollback()
+        raise

@@ -120,6 +120,29 @@ export const branchApi = {
     )
     return response.data
   },
+
+  getBranchAdminAuditHistory: async (
+    businessUserId: string,
+  ): Promise<BranchAdminAuditHistoryResponse> => {
+    const response = await apiClient.get<BranchAdminAuditHistoryResponse>(
+      `/branches/master-admins/${businessUserId}/audit-history`,
+    )
+
+    return response.data
+  },
+  revokeBranchAdmin: async (
+    assignmentId: string,
+    revocationReason?: string,
+  ) => {
+    const response = await apiClient.post(
+      `/branches/admin-assignments/${assignmentId}/revoke`,
+      {
+        revocation_reason: revocationReason || null,
+      },
+    )
+    return response.data
+  },
+
 }
 
 export interface BranchAdminAssignment {
@@ -203,3 +226,49 @@ export interface MasterBranchAdmin {
 export interface MasterBranchAdminListResponse {
   admins: MasterBranchAdmin[]
 }
+
+
+export interface BranchAdminAuditProfile {
+  business_user_id: string
+  user_id: string
+  full_name: string
+  email: string
+  phone: string | null
+  role_name: string
+  membership_status: string
+}
+
+export interface BranchAdminCurrentAssignment {
+  assignment_id: string
+  branch_id: string
+  branch_name: string
+  assignment_status: string
+  assigned_at: string
+  effective_from: string
+  notes: string | null
+}
+
+export interface BranchAdminAuditEvent {
+  audit_id: string
+  action: string
+  table_name: string
+  record_id: string
+  branch_id: string | null
+  branch_name: string | null
+  performed_by_user_id: string
+  performed_by_name: string | null
+  performed_at: string
+  old_values: Record<string, unknown> | null
+  new_values: Record<string, unknown> | null
+  previous_status: string | null
+  new_status: string | null
+  revocation_reason: string | null
+  notes: string | null
+}
+
+export interface BranchAdminAuditHistoryResponse {
+  admin: BranchAdminAuditProfile
+  current_branch_assignments: BranchAdminCurrentAssignment[]
+  history: BranchAdminAuditEvent[]
+}
+

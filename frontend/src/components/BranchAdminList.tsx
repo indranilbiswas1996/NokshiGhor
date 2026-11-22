@@ -1,9 +1,19 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { isAxiosError } from 'axios'
-import { X, RefreshCw, Search, Users, Mail, Phone, CalendarDays } from 'lucide-react'
+import {
+  X,
+  RefreshCw,
+  Search,
+  Users,
+  Mail,
+  Phone,
+  CalendarDays,
+  ShieldOff,
+} from 'lucide-react'
 import { branchApi, type BranchAdmin } from '../api/branch'
 import './BranchAdminList.css'
+import BranchAdminRevokeModal from './BranchAdminRevokeModal'
 
 interface BranchAdminListProps {
   branchId: string
@@ -20,6 +30,10 @@ export default function BranchAdminList({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
+  const [selectedRevoke, setSelectedRevoke] = useState<{
+    assignmentId: string
+    adminName: string
+  } | null>(null)
 
   const loadAdmins = useCallback(async () => {
     setLoading(true)
@@ -201,6 +215,22 @@ export default function BranchAdminList({
                       Notes: {admin.notes}
                     </div>
                   )}
+                  {admin.assignment_status === 'active' && (
+                    <button
+                      type="button"
+                      className="branch-admin-revoke-action"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        setSelectedRevoke({
+                          assignmentId: admin.assignment_id,
+                          adminName: admin.full_name,
+                        })
+                      }}
+                    >
+                      <ShieldOff size={14} />
+                      Revoke Access
+                    </button>
+                  )}
                 </article>
               ))}
             </div>
@@ -223,6 +253,17 @@ export default function BranchAdminList({
           </button>
         </div>
       </div>
+            {selectedRevoke && (
+        <BranchAdminRevokeModal
+          assignmentId={selectedRevoke.assignmentId}
+          adminName={selectedRevoke.adminName}
+          branchName={branchName}
+          onClose={() => setSelectedRevoke(null)}
+          onSuccess={() => {
+            void loadAdmins()
+          }}
+        />
+      )}
     </div>
   )
 }

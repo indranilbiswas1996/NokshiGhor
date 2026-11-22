@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from 'react'
 import { isAxiosError } from 'axios'
-import { X, UserPlus, UserRoundPlus } from 'lucide-react'
+import { X, UserPlus, UserRoundPlus, MapPin, Mail } from 'lucide-react'
 import {
   branchApi,
   type BranchAdminCandidate,
@@ -9,6 +9,9 @@ import {
 interface BranchAdminAssignmentProps {
   branchId: string
   branchName: string
+  branchCode: string | null
+  branchAddress: string | null
+  branchEmail: string | null
   onClose: () => void
   onAssigned: () => void
 }
@@ -16,6 +19,9 @@ interface BranchAdminAssignmentProps {
 export default function BranchAdminAssignment({
   branchId,
   branchName,
+  branchCode,
+  branchAddress,
+  branchEmail,
   onClose,
   onAssigned,
 }: BranchAdminAssignmentProps) {
@@ -149,7 +155,7 @@ export default function BranchAdminAssignment({
   return (
     <div className="owner-modal-overlay">
       <div
-        className="owner-profile-modal"
+        className="owner-profile-modal branch-admin-list-modal"
         role="dialog"
         aria-modal="true"
         aria-labelledby="branch-admin-title"
@@ -157,7 +163,26 @@ export default function BranchAdminAssignment({
         <div className="owner-modal-header">
           <div>
             <h2 id="branch-admin-title">Assign Branch Admin</h2>
-            <p>{branchName}</p>
+            <div className="branch-admin-assignment-details">
+              <h3>
+                {branchName}
+                {branchCode && <span> ({branchCode})</span>}
+              </h3>
+
+              {branchAddress && (
+                <p>
+                  <MapPin size={14} />
+                  {branchAddress}
+                </p>
+              )}
+
+              {branchEmail && (
+                <p>
+                  <Mail size={14} />
+                  {branchEmail}
+                </p>
+              )}
+            </div>
           </div>
 
           <button
@@ -254,53 +279,57 @@ export default function BranchAdminAssignment({
                 />
               </div>
             </>
-          ) : (
-            <div>
-              {loading ? (
-                <p>Loading available Branch Admins...</p>
-              ) : (
-                <select
-                  id="branch-admin-select"
-                  value={selectedUser}
-                  onChange={(event) => setSelectedUser(event.target.value)}
-                  disabled={saving || candidates.length === 0}
-                >
-                  <option value="">Choose a Branch Admin</option>
-
-                  {candidates.map((candidate) => (
-                    <option
-                      key={candidate.business_user_id}
-                      value={candidate.business_user_id}
+            ) : (
+              <>
+                <div>
+                  {loading ? (
+                    <p>Loading available Branch Admins...</p>
+                  ) : candidates.length > 0 ? (
+                    <select
+                      id="branch-admin-select"
+                      value={selectedUser}
+                      onChange={(event) => setSelectedUser(event.target.value)}
+                      disabled={saving}
                     >
-                      {candidate.full_name}
-                      {candidate.email ? ` (${candidate.email})` : ''}
-                    </option>
-                  ))}
-                </select>
-              )}
+                      <option value="">Choose a Branch Admin</option>
 
-              {!loading && candidates.length === 0 && !error && (
-                <p className="page-notice">
-                  No available Branch Admins found for this Branch. Create new Admin.
-                </p>
-              )}
-            </div>
-          )}
+                      {candidates.map((candidate) => (
+                        <option
+                          key={candidate.business_user_id}
+                          value={candidate.business_user_id}
+                        >
+                          {candidate.full_name}
+                          {candidate.email ? ` (${candidate.email})` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  ) : null}
 
-          <div>
-            <label htmlFor="branch-admin-notes">
-              Notes (Optional)
-            </label>
+                  {!loading && candidates.length === 0 && !error && (
+                    <p className="page-notice">
+                      No available Branch Admins found for this Branch. Create new Admin.
+                    </p>
+                  )}
+                </div>
 
-            <textarea
-              id="branch-admin-notes"
-              value={notes}
-              onChange={(event) => setNotes(event.target.value)}
-              placeholder="Enter assignment notes"
-              rows={3}
-              disabled={saving}
-            />
-          </div>
+                {candidates.length > 0 && (
+                  <div>
+                    <label htmlFor="branch-admin-notes">
+                      Notes (Optional)
+                    </label>
+
+                    <textarea
+                      id="branch-admin-notes"
+                      value={notes}
+                      onChange={(event) => setNotes(event.target.value)}
+                      placeholder="Enter assignment notes"
+                      rows={3}
+                      disabled={saving}
+                    />
+                  </div>
+                )}
+              </>
+            )}
 
           {error && (
             <div className="page-notice error" role="alert">
@@ -319,30 +348,30 @@ export default function BranchAdminAssignment({
             Cancel
           </button>
 
-          <button
-            type="button"
-            className="owner-profile-save"
-            onClick={
-              creating ? handleCreateAndAssign : handleAssign
-            }
-            disabled={
-              saving ||
-              (creating
-                ? !fullName.trim() || !email.trim() || !password
-                : loading || !selectedUser)
-            }
-          >
-            {saving ? (
-              'Please wait...'
-            ) : creating ? (
-              <>
-                <UserRoundPlus size={16} />
-                Create & Assign
-              </>
-            ) : (
-              'Assign Admin'
-            )}
-          </button>
+          {(creating || (!loading && candidates.length > 0)) && (
+            <button
+              type="button"
+              className="owner-profile-save"
+              onClick={creating ? handleCreateAndAssign : handleAssign}
+              disabled={
+                saving ||
+                (creating
+                  ? !fullName.trim() || !email.trim() || !password
+                  : loading || !selectedUser)
+              }
+            >
+              {saving ? (
+                'Please wait...'
+              ) : creating ? (
+                <>
+                  <UserRoundPlus size={16} />
+                  Create & Assign
+                </>
+              ) : (
+                'Assign Admin'
+              )}
+            </button>
+          )}
         </div>
       </div>
     </div>

@@ -10,13 +10,15 @@ import {
   Phone,
   CalendarDays,
   Building2,
+  ShieldOff,
 } from 'lucide-react'
 import {
   branchApi,
   type MasterBranchAdmin,
 } from '../api/branch'
 import './BranchAdminList.css'
-
+import BranchAdminRevokeModal from './BranchAdminRevokeModal'
+import MasterBranchAdminAuditModal from './MasterBranchAdminAuditModal'
 interface MasterBranchAdminListProps {
   onClose: () => void
 }
@@ -37,7 +39,14 @@ export default function MasterBranchAdminList({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
-
+  const [selectedAuditAdmin, setSelectedAuditAdmin] = useState<string | null>(
+    null,
+  )
+  const [selectedRevoke, setSelectedRevoke] = useState<{
+    assignmentId: string
+    adminName: string
+    branchName: string
+  } | null>(null)
   const loadAdmins = useCallback(async () => {
     setLoading(true)
     setError('')
@@ -234,6 +243,15 @@ export default function MasterBranchAdminList({
                 <article
                   key={admin.business_user_id}
                   className="branch-admin-card"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setSelectedAuditAdmin(admin.business_user_id)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault()
+                      setSelectedAuditAdmin(admin.business_user_id)
+                    }
+                  }}
                 >
                   {/* Admin Information */}
                   <div className="branch-admin-card-main">
@@ -273,31 +291,45 @@ export default function MasterBranchAdminList({
                   <div className="branch-admin-notes">
                     <strong>Branch Details</strong>
 
-                    {admin.assignments.map((assignment) => (
-                      <div
-                        key={assignment.assignment_id}
-                        className="master-admin-branch-detail"
-                      >
-                        <span>
-                          <Building2 size={15} />
-                          <strong>{assignment.branch_name}</strong>
-                        </span>
-
-                        <span>
-                          <CalendarDays size={14} />
-                          Assigned:{' '}
-                          {new Date(
-                            assignment.assigned_at
-                          ).toLocaleString()}
-                        </span>
-
-                        {assignment.notes && (
+                                          
+                      {admin.assignments.map((assignment) => (
+                        <div
+                          key={assignment.assignment_id}
+                          className="master-admin-branch-detail"
+                        >
                           <span>
-                            Notes: {assignment.notes}
+                            <Building2 size={15} />
+                            <strong>{assignment.branch_name}</strong>
                           </span>
-                        )}
-                      </div>
-                    ))}
+
+                          <span>
+                            <CalendarDays size={14} />
+                            Assigned:{' '}
+                            {new Date(assignment.assigned_at).toLocaleString()}
+                          </span>
+
+                          {assignment.notes && (
+                            <span>Notes: {assignment.notes}</span>
+                          )}
+
+                          <button
+                            type="button"
+                            className="branch-admin-revoke-action"
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              setSelectedRevoke({
+                                assignmentId: assignment.assignment_id,
+                                adminName: admin.full_name,
+                                branchName: assignment.branch_name,
+                              })
+                            }}
+                          >
+                            <ShieldOff size={14} />
+                            Revoke Access
+                          </button>
+                        </div>
+                      ))}
+
                   </div>
                 </article>
               ))}
@@ -322,7 +354,25 @@ export default function MasterBranchAdminList({
             Close
           </button>
         </div>
-      </div>
+            </div>
+
+      {selectedAuditAdmin && (
+        <MasterBranchAdminAuditModal
+          businessUserId={selectedAuditAdmin}
+          onClose={() => setSelectedAuditAdmin(null)}
+        />
+      )}
+      {selectedRevoke && (
+        <BranchAdminRevokeModal
+          assignmentId={selectedRevoke.assignmentId}
+          adminName={selectedRevoke.adminName}
+          branchName={selectedRevoke.branchName}
+          onClose={() => setSelectedRevoke(null)}
+          onSuccess={() => {
+            void loadAdmins()
+          }}
+        />
+      )}
     </div>
   )
 }

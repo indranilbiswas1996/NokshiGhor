@@ -18,6 +18,8 @@ from app.schemas.branch import (
     BranchAdminCreateResponse,
     BranchAdminListResponse,
     MasterBranchAdminListResponse,
+    BranchAdminAuditHistoryResponse,
+    BranchAdminRevokeRequest,
 )
 from uuid import UUID
 from app.services import branch_service
@@ -206,4 +208,38 @@ def get_master_branch_admins(
         db=db,
         business_id=str(current_business["id"]),
         actor_user_id=str(current_user["id"]),
+    )
+
+
+@router.get(
+    "/master-admins/{business_user_id}/audit-history",
+    response_model=BranchAdminAuditHistoryResponse,
+)
+def get_branch_admin_audit_history(
+    business_user_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+    current_business: dict = Depends(get_current_business),
+):
+    return branch_service.get_branch_admin_audit_history(
+        db=db,
+        business_id=current_business["id"],
+        actor_user_id=current_user["id"],
+        business_user_id=business_user_id,
+    )
+
+@router.post("/admin-assignments/{assignment_id}/revoke")
+def revoke_branch_admin(
+    assignment_id: str,
+    payload: BranchAdminRevokeRequest,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+    current_business: dict = Depends(get_current_business),
+):
+    return branch_service.revoke_branch_admin(
+        db=db,
+        business_id=current_business["id"],
+        requester_user_id=current_user["id"],
+        assignment_id=assignment_id,
+        revocation_reason=payload.revocation_reason,
     )
