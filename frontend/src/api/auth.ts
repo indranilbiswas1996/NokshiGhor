@@ -29,6 +29,36 @@ export const authApi = {
     return response.data
   },
 
+  async changePassword(data: {
+    current_password: string
+    new_password: string
+  }): Promise<{ message: string }> {
+    const response = await apiClient.post<{ message: string }>(
+      '/auth/password/change',
+      data,
+    )
+    return response.data
+  },
+
+  async requestPasswordReset(email: string): Promise<{ message: string }> {
+    const response = await apiClient.post<{ message: string }>(
+      '/auth/password/forgot',
+      { email },
+    )
+    return response.data
+  },
+
+  async resetPassword(data: {
+    token: string
+    new_password: string
+  }): Promise<{ message: string }> {
+    const response = await apiClient.post<{ message: string }>(
+      '/auth/password/reset',
+      data,
+    )
+    return response.data
+  },
+
   async getBusinesses(): Promise<BusinessListResponse> {
     const response = await apiClient.get<BusinessListResponse>(
       '/auth/businesses'

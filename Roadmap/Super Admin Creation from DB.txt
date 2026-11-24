@@ -1,8 +1,6 @@
 For direct database execution, first generate an Argon2 hash using the backend’s password library. Run this in PowerShell from the project root and enter the password at the prompt:
 
-```powershell
-.\backend\.venv\Scripts\python.exe -c "from getpass import getpass; from pwdlib import PasswordHash; print(PasswordHash.recommended().hash(getpass('New password: ')))"
-```
+.\backend\.venv\Scripts\python.exe -c "from getpass import getpass; from pwdlib import PasswordHash; print(PasswordHash.recommended().hash(getpass('123456789012')))"
 
 Paste the resulting hash in place of `REPLACE_WITH_ARGON2_HASH`, then execute this SQL. It creates a user and Super Admin entry but **no business membership**:
 
@@ -20,9 +18,9 @@ BEGIN
         status
     )
     VALUES (
-        'Super Admin Name',
-        'superadmin@example.com',
-        'REPLACE_WITH_ARGON2_HASH',
+        'Gcettb Dada',
+        'gcettbdada@gmail.com',
+        '$argon2id$v=19$m=65536,t=3,p=4$7NIvl5ZbsizGGnIiPHiT6A$PscO/WkUf2CzjgzA4WJBL8z1LzGUQS4cr1iIaRJzyIE',
         'active'
     )
     RETURNING id INTO new_user_id;
@@ -34,12 +32,73 @@ $$;
 
 COMMIT;
 ```
+$settings = ConvertFrom-StringData (Get-Content .env -Raw)
+$dbPassword = $settings.POSTGRES_PASSWORD
 
-Verify the account afterward:
+@'
+BEGIN;
 
-```sql
-SELECT u.email, public.fn_is_super_admin(u.id) AS is_super_admin
-FROM public.users u
-WHERE LOWER(u.email) = LOWER('superadmin@example.com')
-  AND u.deleted_at IS NULL;
-```
+DO $$
+DECLARE
+    new_user_id UUID;
+BEGIN
+    INSERT INTO public.users (
+        full_name,
+        email,
+        password_hash,
+        status
+    )
+    VALUES (
+        'Gcettb Dada',
+        'gcettbdada@gmail.com',
+        '$argon2id$v=19$m=65536,t=3,p=4$7NIvl5ZbsizGGnIiPHiT6A$PscO/WkUf2CzjgzA4WJBL8z1LzGUQS4cr1iIaRJzyIE',
+        'active'
+    )
+    RETURNING id INTO new_user_id;
+
+    INSERT INTO public.super_admin_users (user_id, created_by)
+    VALUES (new_user_id, new_user_id);
+END
+$$;
+
+COMMIT;
+'@ | docker exec -i -e "PGPASSWORD=$dbPassword" nokshighor-postgres psql -U nokshighor_user -d nokshighor_db -v ON_ERROR_STOP=1 -f -
+
+$exitCode = $LASTEXITCODE
+Remove-Variable dbPassword, settings
+if ($exitCode -ne 0) { throw 'Super Admin insert failed.' }
+
+
+
+$pythonCommand = "from getpass import getpass; from pwdlib import PasswordHash; password=getpass('New password: '); confirmation=getpass('123456789012'); assert password == confirmation, 'Passwords do not match'; print(PasswordHash.recommended().hash(password))"
+$hash = & .\backend\.venv\Scripts\python.exe -c $pythonCommand
+if ($LASTEXITCODE -ne 0 -or -not $hash) { throw 'Password reset cancelled.' }
+
+$settings = ConvertFrom-StringData (Get-Content .env -Raw)
+$dbPassword = $settings.POSTGRES_PASSWORD
+$query = "UPDATE public.users SET password_hash = '$hash', updated_at = NOW(), updated_by = id WHERE LOWER(email) = LOWER('gcettbdada@gmail.com') AND status = 'active' AND deleted_at IS NULL RETURNING email;"
+docker exec -e "PGPASSWORD=$dbPassword" nokshighor-postgres psql -U nokshighor_user -d nokshighor_db -v ON_ERROR_STOP=1 -c $query
+
+Remove-Variable hash, dbPassword, 
+
+
+
+
+
+
+
+
+
+
+
+
+
+SMTP is not configured locally, so email recovery won’t send until you add these to the root .env and restart the backend:
+SMTP_HOST=your-smtp-host
+SMTP_PORT=587
+SMTP_USERNAME=your-smtp-username
+SMTP_PASSWORD=your-smtp-password
+SMTP_FROM_EMAIL=your-sender-address
+SMTP_USE_STARTTLS=true
+FRONTEND_BASE_URL=http://127.0.0.1:5173
+

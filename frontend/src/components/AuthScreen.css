@@ -160,6 +160,25 @@
   gap: 12px;
 }
 
+.auth-business-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: -10px 0 16px;
+}
+
+.auth-logout-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.auth-logout-button:disabled {
+  opacity: .6;
+  cursor: wait;
+}
+
 .business-option {
   width: 100%;
   display: flex;

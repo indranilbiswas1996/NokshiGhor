@@ -18,6 +18,7 @@ import OpeningStock from './components/OpeningStock'
 import OwnerManagement from './components/OwnerManagement'
 import BranchManagement from './components/BranchManagement'
 import SuperAdminManagement from './components/SuperAdminManagement'
+import { PasswordResetPage, PasswordSecurityModal, type PasswordDialogMode } from './components/PasswordSecurity'
 import { branchApi } from './api/branch'
 import type { Branch } from './api/branch'
 const navigation = [
@@ -108,6 +109,12 @@ function App() {
   const themeControlRef = useRef<HTMLDivElement>(null)
   const branchSwitchRef = useRef<HTMLDivElement>(null)
   const [branchMenuOpen, setBranchMenuOpen] = useState(false)
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false)
+  const [passwordDialogMode, setPasswordDialogMode] = useState<PasswordDialogMode | null>(null)
+  const [passwordResetToken, setPasswordResetToken] = useState<string | null>(
+    () => new URLSearchParams(window.location.search).get('reset_token')
+  )
+  const profileActionsRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const handleOutsideClick = (event: PointerEvent) => {
@@ -124,12 +131,20 @@ function App() {
       ) {
         setBranchMenuOpen(false)
       }
+
+      if (
+        profileActionsRef.current &&
+        !profileActionsRef.current.contains(event.target as Node)
+      ) {
+        setProfileMenuOpen(false)
+      }
     }
 
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setThemePanelOpen(false)
         setBranchMenuOpen(false)
+        setProfileMenuOpen(false)
       }
     }
 
@@ -247,6 +262,7 @@ useEffect(() => {
 }, [authenticatedBusiness?.id, branchSelectionLoaded, selectedBranchId])
 
 const openOwnerProfile = () => {
+  setProfileMenuOpen(false)
   setActivePage('Owner Management')
   setProfileOpenRequest((request) => request + 1)
 }
@@ -371,6 +387,19 @@ useEffect(() => {
   const designation = (authenticatedBusiness ? authenticatedBusiness.role_name : 'owner')
     .replace(/[_-]+/g, ' ')
     .replace(/\b\w/g, (letter) => letter.toUpperCase())
+  const canManageBranding = authenticatedUser?.is_super_admin === true
+if (passwordResetToken) {
+  return (
+    <PasswordResetPage
+      token={passwordResetToken}
+      onComplete={() => {
+        window.history.replaceState({}, '', window.location.pathname)
+        setPasswordResetToken(null)
+      }}
+    />
+  )
+}
+
 if (!authenticatedBusiness) {
   if (showSuperAdminBeforeBusiness) {
     return (
@@ -399,25 +428,13 @@ if (!authenticatedBusiness) {
       {mobileOpen && <button className="mobile-overlay" onClick={() => setMobileOpen(false)} aria-label="Close menu" />}
 
       <aside className={`sidebar ${mobileOpen ? 'mobile-open' : ''}`}>
-        <div className="brand">
-          <div className="brand-mark">
-            {branding.logo ? (
-              <img
-                src={branding.logo}
-                alt={branding.softwareName}
-                className="brand-logo-image"
-              />
-            ) : (
-              <Zap size={23} fill="currentColor" />
-            )}
-          </div>
-
-          <div className="brand-text">
-            <strong>{branding.softwareName}</strong>
-            <span>{branding.tagline}</span>
-          </div>
-          <button className="mobile-close" onClick={() => setMobileOpen(false)} aria-label="Close sidebar"><X size={19} /></button>
-        </div>
+        <button
+          className="mobile-close sidebar-mobile-close"
+          onClick={() => setMobileOpen(false)}
+          aria-label="Close sidebar"
+        >
+          <X size={19} />
+        </button>
 
         <div className="business-switch" ref={branchSwitchRef}>
           <div className="business-avatar">N</div>
@@ -512,7 +529,6 @@ if (!authenticatedBusiness) {
             </div>
           )}
         </nav>
-  'Super Admin': 'Business Management',
 
         <div className="sidebar-bottom">
           <button
@@ -526,23 +542,70 @@ if (!authenticatedBusiness) {
             <span>{bengali ? 'সেটিংস' : 'Settings'}</span>
           </button>
           <button className="nav-item"><CircleHelp size={19} /><span>{bengali ? 'সাহায্য' : 'Help & Support'}</span></button>
-          <button
-            type="button"
-            className="sidebar-profile"
-            onClick={openOwnerProfile}
-            aria-label="Open profile"
-          >
-            <div className="profile-avatar">
-              {authenticatedUser?.profile_picture ? (
-                <img src={authenticatedUser.profile_picture} alt="" />
-              ) : profileInitials}
-            </div>
-            <div className="profile-info">
-              <strong>{authenticatedUser?.full_name || 'Business Owner'}</strong>
-              <span>{designation}</span>
-            </div>
-            <ChevronDown size={16} />
-          </button>
+          <div className="sidebar-profile-actions" ref={profileActionsRef}>
+            <button
+              type="button"
+              className="sidebar-profile"
+              onClick={() => setProfileMenuOpen((open) => !open)}
+              aria-label="Open profile actions"
+              aria-haspopup="menu"
+              aria-expanded={profileMenuOpen}
+            >
+              <div className="profile-avatar">
+                {authenticatedUser?.profile_picture ? (
+                  <img src={authenticatedUser.profile_picture} alt="" />
+                ) : profileInitials}
+              </div>
+              <div className="profile-info">
+                <strong>{authenticatedUser?.full_name || 'Business Owner'}</strong>
+                <span>{designation}</span>
+              </div>
+              <ChevronDown size={16} />
+            </button>
+            {profileMenuOpen && (
+              <div className="sidebar-profile-menu" role="menu" aria-label="Profile actions">
+                <button type="button" role="menuitem" onClick={openOwnerProfile}>Edit Profile</button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setProfileMenuOpen(false)
+                    setPasswordDialogMode('change')
+                  }}
+                >
+                  Change Password
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setProfileMenuOpen(false)
+                    setPasswordDialogMode('forgot')
+                  }}
+                >
+                  Forgot Password
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="brand brand-footer">
+          <div className="brand-mark">
+            {branding.logo ? (
+              <img
+                src={branding.logo}
+                alt={branding.softwareName}
+                className="brand-logo-image"
+              />
+            ) : (
+              <Zap size={20} fill="currentColor" />
+            )}
+          </div>
+          <div className="brand-text">
+            <strong>{branding.softwareName}</strong>
+            <span>{branding.tagline}</span>
+          </div>
         </div>
       </aside>
 
@@ -879,16 +942,18 @@ if (!authenticatedBusiness) {
 
           </section>
           )}
-          {activePage === 'Settings' && (
+          {activePage === 'Settings' && canManageBranding && (
             <section className="settings-container">
               <div className="settings-heading">
                 <div>
                   <div className="eyebrow">APPLICATION CONFIGURATION</div>
                   <h1>{bengali ? 'সফটওয়্যার ব্র্যান্ডিং' : 'Software Branding'}</h1>
                   <p>
-                    {bengali
-                      ? 'সফটওয়্যারের নাম, পরিচিতি এবং লোগো পরিবর্তন করুন।'
-                      : 'Customize your software name, tagline and logo.'}
+                    {canManageBranding
+                      ? (bengali
+                        ? 'সফটওয়্যারের নাম, পরিচিতি এবং লোগো পরিবর্তন করুন।'
+                        : 'Customize your software name, tagline and logo.')
+                      : 'Software branding is managed by a Super Admin.'}
                   </p>
                 </div>
               </div>
@@ -926,6 +991,7 @@ if (!authenticatedBusiness) {
                       value={branding.softwareName}
                       maxLength={40}
                       placeholder="Business Manager"
+                      disabled={!canManageBranding}
                       onChange={(event) =>
                         setBranding({ ...branding, softwareName: event.target.value })
                       }
@@ -942,6 +1008,7 @@ if (!authenticatedBusiness) {
                       value={branding.tagline}
                       maxLength={70}
                       placeholder="SMART BUSINESS MANAGEMENT"
+                      disabled={!canManageBranding}
                       onChange={(event) =>
                         setBranding({ ...branding, tagline: event.target.value })
                       }
@@ -956,6 +1023,7 @@ if (!authenticatedBusiness) {
                       id="software-logo"
                       type="file"
                       accept="image/*"
+                      disabled={!canManageBranding}
                       onChange={(event) => {
                         const file = event.target.files?.[0]
                         if (!file) return
@@ -986,7 +1054,7 @@ if (!authenticatedBusiness) {
                     <small>Image format: PNG, JPG, SVG. Maximum size: 1 MB.</small>
                   </div>
 
-                  {branding.logo && (
+                  {canManageBranding && branding.logo && (
                     <button
                       className="outline-button"
                       type="button"
@@ -996,6 +1064,7 @@ if (!authenticatedBusiness) {
                     </button>
                   )}
                 </div>
+                {canManageBranding && (
                 <div className="branding-actions">
                   <button
                     className="primary-button"
@@ -1027,6 +1096,7 @@ if (!authenticatedBusiness) {
                     Reset to Default
                   </button>
                 </div>
+                )}
               </div>
             </section>
           )}
@@ -1155,6 +1225,13 @@ if (!authenticatedBusiness) {
           <footer className="page-footer"><span>© {new Date().getFullYear()} {businessSettings.shopName}. All rights reserved.</span><span>Smart Electrical & Interior Business Management System</span></footer>
         </div>
       </main>
+      {passwordDialogMode && (
+        <PasswordSecurityModal
+          mode={passwordDialogMode}
+          email={authenticatedUser?.email || ''}
+          onClose={() => setPasswordDialogMode(null)}
+        />
+      )}
     </div>
   )
 }

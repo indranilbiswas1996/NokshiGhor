@@ -11,6 +11,13 @@
 .brand-text { display: flex; flex-direction: column; gap: 2px; }
 .brand-text strong { font-size: 19px; color: white; letter-spacing: -.5px; }
 .brand-text span { font-size: 8px; letter-spacing: 1.1px; color: #9db9af; }
+.brand-footer { flex: 0 0 auto; gap: 9px; margin-top: 12px; padding: 13px 8px 2px; border-top: 1px solid var(--sidebar-border, #2b4740); }
+.brand-footer .brand-mark { width: 32px; height: 32px; flex-shrink: 0; border-radius: 8px; }
+.brand-footer .brand-text { min-width: 0; }
+.brand-footer .brand-text strong { overflow: hidden; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.brand-footer .brand-text span { overflow: hidden; font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
+.sidebar-mobile-close { position: absolute; z-index: 2; top: 14px; right: 13px; align-items: center; justify-content: center; padding: 6px; border: 0; border-radius: 6px; background: transparent; color: #d4e1dd; cursor: pointer; }
+.sidebar-mobile-close:hover { background: var(--sidebar-surface, #203b36); color: #fff; }
 .business-switch { position: relative; display: flex; align-items: center; gap: 10px; background: #203b36; border: 1px solid #315049; border-radius: 10px; padding: 11px 9px; margin-bottom: 25px; }
 .business-avatar { width: 34px; height: 34px; display: grid; place-items: center; background: #d7eee5; color: #176e57; font-weight: 800; border-radius: 9px; }
 .branch-switch-toggle { display: grid; place-items: center; padding: 5px; border: 0; border-radius: 6px; background: transparent; color: #b7cbc3; cursor: pointer; }
@@ -36,12 +43,18 @@
 .profile-avatar, .topbar-avatar { padding: 0; border: 0; overflow: hidden; cursor: pointer; }
 .profile-avatar img, .topbar-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .sidebar-profile:focus-visible, .topbar-avatar:focus-visible { outline: 2px solid #159675; outline-offset: 3px; }
+.sidebar-profile-actions { position: relative; }
+.sidebar-profile-menu { position: absolute; z-index: 45; right: 0; bottom: calc(100% + 8px); width: 205px; padding: 5px; border: 1px solid #315049; border-radius: 7px; background: #172f2a; box-shadow: 0 12px 28px #061b17a6; }
+.sidebar-profile-menu button { display: flex; width: 100%; min-height: 36px; align-items: center; padding: 8px 10px; border: 0; border-radius: 5px; background: transparent; color: #d4e1dd; text-align: left; font: inherit; font-size: 11px; cursor: pointer; }
+.sidebar-profile-menu button:hover { background: #1b9b7b; color: #fff; }
+.sidebar-collapsed .sidebar-profile-menu { right: auto; left: calc(100% + 8px); bottom: 0; }
 
 .main-area { margin-left: 258px; min-height: 100vh; transition: margin-left .25s ease; }
 .sidebar-collapsed .sidebar { width: 78px; padding-inline: 12px; }
 .sidebar-collapsed .main-area { margin-left: 78px; }
 .sidebar-collapsed .brand-text, .sidebar-collapsed .business-info, .sidebar-collapsed .business-switch > svg, .sidebar-collapsed .nav-heading, .sidebar-collapsed .nav-item span, .sidebar-collapsed .profile-info, .sidebar-collapsed .sidebar-profile > svg { display: none; }
 .sidebar-collapsed .brand { justify-content: center; padding-inline: 0; }
+.sidebar-collapsed .brand-footer { justify-content: center; padding-inline: 0; }
 .sidebar-collapsed .business-switch, .sidebar-collapsed .sidebar-profile { justify-content: center; }
 .sidebar-collapsed .nav-item { justify-content: center; padding-inline: 0; }
 .topbar { height: 72px; padding: 0 34px; display: flex; align-items: center; justify-content: space-between; background: #fff; border-bottom: 1px solid #e9eeeb; }

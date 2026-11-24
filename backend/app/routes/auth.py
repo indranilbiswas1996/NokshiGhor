@@ -1,12 +1,28 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+from hashlib import sha256
+import secrets
 from uuid import UUID
+from urllib.parse import quote
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.tokens import create_access_token, decode_access_token
-from app.schemas.auth import LoginRequest, LoginResponse, UserResponse
+from app.schemas.auth import (
+    ChangePasswordRequest,
+    ForgotPasswordRequest,
+    LoginRequest,
+    LoginResponse,
+    ResetPasswordRequest,
+    UserResponse,
+)
 from app.services.auth_service import authenticate_user
+from app.services.email_service import send_password_reset_email
+from app.services.password_service import (
+    change_password,
+    complete_password_reset,
+    create_password_reset,
+)
 from app.core.dependencies import get_current_user
 from fastapi.security import HTTPBearer
 from sqlalchemy import text
@@ -27,6 +43,85 @@ router = APIRouter(
     prefix="/auth",
     tags=["Authentication"],
 )
+
+
+@router.post("/password/change")
+def change_my_password(
+    payload: ChangePasswordRequest,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    verified_user = authenticate_user(
+        db=db,
+        email=current_user["email"],
+        password=payload.current_password,
+    )
+    if verified_user is None or str(verified_user["id"]) != str(current_user["id"]):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password is incorrect.",
+        )
+
+    change_password(
+        db=db,
+        user_id=str(current_user["id"]),
+        new_password=payload.new_password,
+    )
+    return {"message": "Password changed successfully."}
+
+
+@router.post("/password/forgot", status_code=status.HTTP_202_ACCEPTED)
+def request_password_reset(
+    payload: ForgotPasswordRequest,
+    db: Session = Depends(get_db),
+):
+    if not settings.SMTP_HOST or not settings.SMTP_FROM_EMAIL:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Password recovery email is not configured.",
+        )
+
+    token = secrets.token_urlsafe(32)
+    token_hash = sha256(token.encode("utf-8")).hexdigest()
+    expires_at = datetime.now(timezone.utc) + timedelta(
+        minutes=settings.PASSWORD_RESET_TOKEN_TTL_MINUTES
+    )
+    reset = create_password_reset(
+        db=db,
+        email=payload.email,
+        token_hash=token_hash,
+        expires_at=expires_at,
+    )
+
+    if reset:
+        reset_url = (
+            f"{settings.FRONTEND_BASE_URL.rstrip('/')}"
+            f"/?reset_token={quote(token)}"
+        )
+        send_password_reset_email(reset["email"], reset_url)
+
+    return {
+        "message": "If an active account exists for that email, a reset link has been sent."
+    }
+
+
+@router.post("/password/reset")
+def reset_password(
+    payload: ResetPasswordRequest,
+    db: Session = Depends(get_db),
+):
+    token_hash = sha256(payload.token.encode("utf-8")).hexdigest()
+    completed = complete_password_reset(
+        db=db,
+        token_hash=token_hash,
+        new_password=payload.new_password,
+    )
+    if not completed:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Reset link is invalid or expired.",
+        )
+    return {"message": "Password reset successfully. You can now sign in."}
 
 
 @router.post("/login", response_model=LoginResponse)

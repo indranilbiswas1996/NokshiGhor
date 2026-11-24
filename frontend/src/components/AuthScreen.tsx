@@ -1,6 +1,6 @@
 
 import { useEffect, useState, type FormEvent } from 'react'
-import { Building2, LockKeyhole, Mail, ArrowRight, LoaderCircle } from 'lucide-react'
+import { Building2, LockKeyhole, Mail, ArrowRight, LoaderCircle, LogOut } from 'lucide-react'
 import { authApi } from '../api/auth'
 import type { Business } from '../types/auth'
 import './AuthScreen.css'
@@ -88,6 +88,24 @@ export default function AuthScreen({ onAuthenticated, onOpenSuperAdmin }: AuthSc
     }
   }
 
+  const handleLogout = async () => {
+    setLoading(true)
+    setError('')
+
+    try {
+      await authApi.logout()
+    } catch {
+      // Local credentials are cleared by authApi.logout even if the request fails.
+    } finally {
+      setBusinesses([])
+      setIsSuperAdmin(false)
+      setEmail('')
+      setPassword('')
+      setMode('login')
+      setLoading(false)
+    }
+  }
+
   if (checking) {
     return <div className="auth-loading"><LoaderCircle className="auth-spinner" size={30} /></div>
   }
@@ -152,7 +170,8 @@ export default function AuthScreen({ onAuthenticated, onOpenSuperAdmin }: AuthSc
               <p>Choose the workspace you want to continue with.</p>
             </div>
 
-            {isSuperAdmin && (
+            <div className="auth-business-actions">
+              {isSuperAdmin && (
               <button
                 type="button"
                 className="outline-button super-admin-manage-link"
@@ -160,7 +179,17 @@ export default function AuthScreen({ onAuthenticated, onOpenSuperAdmin }: AuthSc
               >
                 Manage Businesses
               </button>
-            )}
+              )}
+              <button
+                type="button"
+                className="outline-button auth-logout-button"
+                onClick={() => void handleLogout()}
+                disabled={loading}
+              >
+                <LogOut size={15} />
+                Logout
+              </button>
+            </div>
 
             <div className="business-options">
               {businesses.map((business) => (
