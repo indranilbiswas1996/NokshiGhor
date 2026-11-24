@@ -8,9 +8,14 @@ import './AuthScreen.css'
 interface AuthScreenProps {
   onAuthenticated: (business: Business) => void
   onOpenSuperAdmin: () => void
+  forceBusinessSelection?: boolean
 }
 
-export default function AuthScreen({ onAuthenticated, onOpenSuperAdmin }: AuthScreenProps) {
+export default function AuthScreen({
+  onAuthenticated,
+  onOpenSuperAdmin,
+  forceBusinessSelection = false,
+}: AuthScreenProps) {
   const [mode, setMode] = useState<'login' | 'business'>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -30,8 +35,15 @@ export default function AuthScreen({ onAuthenticated, onOpenSuperAdmin }: AuthSc
 
     const restoreSession = async () => {
       try {
-        const business = await authApi.getCurrentBusiness()
-        onAuthenticated(business)
+        if (forceBusinessSelection) {
+          const result = await authApi.getBusinesses()
+          setBusinesses(result.businesses)
+          setIsSuperAdmin(result.is_super_admin)
+          setMode('business')
+        } else {
+          const business = await authApi.getCurrentBusiness()
+          onAuthenticated(business)
+        }
       } catch {
         try {
           const result = await authApi.getBusinesses()
@@ -47,7 +59,7 @@ export default function AuthScreen({ onAuthenticated, onOpenSuperAdmin }: AuthSc
     }
 
     void restoreSession()
-  }, [onAuthenticated])
+  }, [onAuthenticated, forceBusinessSelection])
 
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()

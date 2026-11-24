@@ -17,6 +17,7 @@ import SaleDetails from './components/SaleDetails'
 import OpeningStock from './components/OpeningStock'
 import OwnerManagement from './components/OwnerManagement'
 import BranchManagement from './components/BranchManagement'
+import BranchSelectionScreen from './components/BranchSelectionScreen'
 import SuperAdminManagement from './components/SuperAdminManagement'
 import { PasswordResetPage, PasswordSecurityModal, type PasswordDialogMode } from './components/PasswordSecurity'
 import { branchApi } from './api/branch'
@@ -98,6 +99,8 @@ function App() {
   const [salesRefreshKey, setSalesRefreshKey] = useState(0)
   const [isCreatingOpeningStock, setIsCreatingOpeningStock] = useState(false)
   const [showSuperAdminBeforeBusiness, setShowSuperAdminBeforeBusiness] = useState(false)
+  const [showBusinessSelection, setShowBusinessSelection] = useState(false)
+  const [branchSelectionRequired, setBranchSelectionRequired] = useState(false)
 
   const bengali = language === 'bn'
   const [theme, setTheme] = useState(() => {
@@ -176,11 +179,14 @@ const [profileOpenRequest, setProfileOpenRequest] = useState(0)
 const [accessibleBranches, setAccessibleBranches] = useState<Branch[]>([])
 const [branchListLoading, setBranchListLoading] = useState(false)
 const [branchSelectionLoaded, setBranchSelectionLoaded] = useState(false)
+const [branchListError, setBranchListError] = useState('')
 const [selectedBranchId, setSelectedBranchId] = useState('all')
 
 const handleAuthenticated = useCallback((business: Business) => {
   setShowSuperAdminBeforeBusiness(false)
+  setShowBusinessSelection(false)
   setAuthenticatedBusiness(business)
+  setBranchSelectionRequired(true)
 }, [])
 
 useEffect(() => {
@@ -209,12 +215,14 @@ useEffect(() => {
     setAccessibleBranches([])
     setSelectedBranchId('all')
     setBranchSelectionLoaded(false)
+    setBranchListError('')
     return
   }
 
   let current = true
   setBranchListLoading(true)
   setBranchSelectionLoaded(false)
+  setBranchListError('')
 
   void branchApi.getAccessibleBranches()
     .then(({ branches }) => {
@@ -239,6 +247,7 @@ useEffect(() => {
     .catch((error) => {
       if (current) {
         console.error('Unable to load accessible branches:', error)
+        setBranchListError('Unable to load accessible branches. You can continue with All Branches.')
         setAccessibleBranches([])
         setSelectedBranchId('all')
         setBranchSelectionLoaded(true)
@@ -400,6 +409,30 @@ if (passwordResetToken) {
   )
 }
 
+if (authenticatedBusiness && branchSelectionRequired) {
+  return (
+    <BranchSelectionScreen
+      businessName={authenticatedBusiness.business_name}
+      branches={accessibleBranches}
+      loading={branchListLoading || !branchSelectionLoaded}
+      error={branchListError}
+      onBack={() => {
+        setBranchSelectionRequired(false)
+        setAuthenticatedBusiness(null)
+        setShowBusinessSelection(true)
+      }}
+      onSelect={(branchId) => {
+        setSelectedBranchId(branchId)
+        sessionStorage.setItem(
+          `nokshighor-selected-branch:${authenticatedBusiness.id}`,
+          branchId,
+        )
+        setBranchSelectionRequired(false)
+      }}
+    />
+  )
+}
+
 if (!authenticatedBusiness) {
   if (showSuperAdminBeforeBusiness) {
     return (
@@ -413,6 +446,7 @@ if (!authenticatedBusiness) {
     <AuthScreen
       onAuthenticated={handleAuthenticated}
       onOpenSuperAdmin={() => setShowSuperAdminBeforeBusiness(true)}
+      forceBusinessSelection={showBusinessSelection}
     />
   )
 }
