@@ -120,6 +120,12 @@ export const branchApi = {
     )
     return response.data
   },
+  async getUnassignedBranchAdmins(): Promise<UnassignedBranchAdminListResponse> {
+    const response = await apiClient.get<UnassignedBranchAdminListResponse>(
+      '/branches/unassigned-admins'
+    )
+    return response.data
+  },
 
   getBranchAdminAuditHistory: async (
     businessUserId: string,
@@ -225,6 +231,18 @@ export interface MasterBranchAdmin {
 
 export interface MasterBranchAdminListResponse {
   admins: MasterBranchAdmin[]
+}
+
+export interface UnassignedBranchAdmin {
+  business_user_id: string
+  user_id: string
+  full_name: string
+  email: string | null
+  phone: string | null
+}
+
+export interface UnassignedBranchAdminListResponse {
+  admins: UnassignedBranchAdmin[]
 }
 
 

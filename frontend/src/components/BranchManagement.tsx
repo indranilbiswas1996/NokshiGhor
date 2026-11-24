@@ -16,7 +16,9 @@ import {
   X,
   Save,
   UserPlus,
+  UserRoundPlus,
   Users,
+  UserRoundX,
 } from 'lucide-react'
 import { branchApi } from '../api/branch'
 import type { Branch } from '../api/branch'
@@ -24,6 +26,8 @@ import './BranchManagement.css'
 import BranchAdminAssignment from './BranchAdminAssignment'
 import BranchAdminList from './BranchAdminList'
 import MasterBranchAdminList from './MasterBranchAdminList'
+import UnassignedBranchAdminList from './UnassignedBranchAdminList'
+import CreateUnassignedBranchAdmin from './CreateUnassignedBranchAdmin.tsx'
 interface BranchManagementProps {
   bengali?: boolean
 }
@@ -44,12 +48,15 @@ export default function BranchManagement({
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState('')
   const [showCreateForm, setShowCreateForm] = useState(false)
+  const [showCreateUnassignedAdmin, setShowCreateUnassignedAdmin] = useState(false)
 
   const [createBranchSubmitting, setCreateBranchSubmitting] = useState(false)
   const [createBranchError, setCreateBranchError] = useState('')
   const [statusUpdatingId, setStatusUpdatingId] = useState<string | null>(null)
   const [defaultUpdatingId, setDefaultUpdatingId] = useState<string | null>(null)
   const [viewingMasterBranchAdmins, setViewingMasterBranchAdmins] =  useState(false)
+  const [viewingUnassignedBranchAdmins, setViewingUnassignedBranchAdmins] =
+    useState(false)
   const [createBranchData, setCreateBranchData] = useState({
     branch_name: '',
     branch_code: '',
@@ -309,7 +316,7 @@ const handleCreateBranch = async () => {
         <div className="branch-heading-actions">
           <button
             type="button"
-            className="branch-create-button"
+            className="primary-button"
             onClick={() => setShowCreateForm((previous) => !previous)}
           >
             <Plus size={17} />
@@ -317,7 +324,15 @@ const handleCreateBranch = async () => {
           </button>
           <button
             type="button"
-            className="btn btn-secondary"
+            className="outline-button"
+            onClick={() => setShowCreateUnassignedAdmin(true)}
+          >
+            <UserRoundPlus size={17} />
+            Create Admin without Branch assignment
+          </button>
+          <button
+            type="button"
+            className="outline-button"
             onClick={() => setViewingMasterBranchAdmins(true)}
           >
             <Users size={18} />
@@ -325,7 +340,15 @@ const handleCreateBranch = async () => {
           </button>
           <button
             type="button"
-            className="branch-refresh"
+            className="outline-button"
+            onClick={() => setViewingUnassignedBranchAdmins(true)}
+          >
+            <UserRoundX size={18} />
+            Unassigned Branch Admins
+          </button>
+          <button
+            type="button"
+            className="outline-button branch-refresh"
             onClick={() => void loadBranches(true)}
             disabled={refreshing}
           >
@@ -1038,6 +1061,17 @@ const handleCreateBranch = async () => {
       {viewingMasterBranchAdmins && (
         <MasterBranchAdminList
           onClose={() => setViewingMasterBranchAdmins(false)}
+        />
+      )}
+      {showCreateUnassignedAdmin && (
+        <CreateUnassignedBranchAdmin
+          onClose={() => setShowCreateUnassignedAdmin(false)}
+          onCreated={() => setViewingUnassignedBranchAdmins(true)}
+        />
+      )}
+      {viewingUnassignedBranchAdmins && (
+        <UnassignedBranchAdminList
+          onClose={() => setViewingUnassignedBranchAdmins(false)}
         />
       )}
     </section>

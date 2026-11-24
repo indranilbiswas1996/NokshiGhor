@@ -5,7 +5,7 @@ git remote -v
 git status --short
 git add .
 git status
-git commit -m "Complete owner management and profile update"
+git commit -m "Complete 7. Branch Admin Assignment : Access & Revoke"
 git push -u origin main
 
 cd C:\xampp\htdocs\Project\NokshiGhor\frontend

@@ -18,6 +18,7 @@ from app.schemas.branch import (
     BranchAdminCreateResponse,
     BranchAdminListResponse,
     MasterBranchAdminListResponse,
+    UnassignedBranchAdminListResponse,
     BranchAdminAuditHistoryResponse,
     BranchAdminRevokeRequest,
 )
@@ -205,6 +206,21 @@ def get_master_branch_admins(
     current_business: dict = Depends(get_current_business),
 ):
     return branch_service.get_master_branch_admins(
+        db=db,
+        business_id=str(current_business["id"]),
+        actor_user_id=str(current_user["id"]),
+    )
+
+@router.get(
+    "/unassigned-admins",
+    response_model=UnassignedBranchAdminListResponse,
+)
+def get_unassigned_branch_admins(
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+    current_business: dict = Depends(get_current_business),
+):
+    return branch_service.get_unassigned_branch_admins(
         db=db,
         business_id=str(current_business["id"]),
         actor_user_id=str(current_user["id"]),

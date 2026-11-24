@@ -61,12 +61,17 @@ export default function BranchAdminList({
     void loadAdmins()
   }, [loadAdmins])
 
+  const sortedAdmins = useMemo(
+    () => [...admins].sort((a, b) => a.full_name.localeCompare(b.full_name)),
+    [admins],
+  )
+
   const filteredAdmins = useMemo(() => {
     const query = search.trim().toLowerCase()
 
-    if (!query) return admins
+    if (!query) return sortedAdmins
 
-    return admins.filter((admin) =>
+    return sortedAdmins.filter((admin) =>
       [
         admin.full_name,
         admin.email,
@@ -74,7 +79,7 @@ export default function BranchAdminList({
         admin.assignment_status,
       ].some((value) => value?.toLowerCase().includes(query))
     )
-  }, [admins, search])
+  }, [sortedAdmins, search])
 
   return (
     <div className="owner-modal-overlay">

@@ -604,6 +604,52 @@ def get_master_branch_admins(
             detail="Failed to load Master Branch Admins.",
         )
 
+def get_unassigned_branch_admins(
+    db: Session,
+    business_id: str,
+    actor_user_id: str,
+):
+    try:
+        result = db.execute(
+            text("""
+                SELECT *
+                FROM public.fn_unassigned_branch_admin_list(
+                    CAST(:business_id AS UUID),
+                    CAST(:actor_user_id AS UUID)
+                )
+            """),
+            {
+                "business_id": business_id,
+                "actor_user_id": actor_user_id,
+            },
+        ).mappings().all()
+
+        return {
+            "admins": [dict(row) for row in result]
+        }
+
+    except SQLAlchemyError as exc:
+        db.rollback()
+
+        error_message = str(getattr(exc, "orig", exc))
+
+        if "Only an active Business Owner" in error_message:
+            raise HTTPException(
+                status_code=403,
+                detail="Only an active Business Owner can view unassigned Branch Admins.",
+            )
+
+        if "Business is inactive or unavailable" in error_message:
+            raise HTTPException(
+                status_code=404,
+                detail="Business is inactive or unavailable.",
+            )
+
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to load unassigned Branch Admins.",
+        )
+
 def get_branch_admin_audit_history(
     db: Session,
     business_id,

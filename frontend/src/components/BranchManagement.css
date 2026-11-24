@@ -37,19 +37,11 @@
 }
 
 .branch-refresh {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 15px;
-  border: 1px solid var(--border-color, #ddd);
-  border-radius: 9px;
-  background: var(--card-bg, #fff);
-  color: inherit;
-  cursor: pointer;
+  white-space: nowrap;
 }
 
 .branch-refresh:disabled {
-  opacity: .6;
+  opacity: 0.6;
   cursor: not-allowed;
 }
 
@@ -261,24 +253,6 @@
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
-}
-
-.branch-create-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  padding: 10px 16px;
-  border: none;
-  border-radius: 9px;
-  background: #2563eb;
-  color: #fff;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.branch-create-button:hover {
-  background: #1d4ed8;
 }
 
 .branch-create-form {

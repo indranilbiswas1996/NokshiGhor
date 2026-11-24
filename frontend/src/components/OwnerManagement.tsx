@@ -241,7 +241,7 @@ export default function OwnerManagement({
     return (
       <div className="owner-loading">
         <LoaderCircle className="owner-spin" size={24} />
-        <span>{bengali ? '???????? ???? ??? ?????...' : 'Loading owners...'}</span>
+        <span>{bengali ? 'মালিকদের তথ্য লোড হচ্ছে...' : 'Loading owners...'}</span>
       </div>
     )
   }
@@ -251,33 +251,37 @@ export default function OwnerManagement({
       <div className="owner-heading">
         <div>
           <div className="owner-eyebrow">
-            {bengali ? '?????? ????????' : 'BUSINESS MANAGEMENT'}
+            {bengali ? 'ব্যবসা পরিচালনা' : 'BUSINESS MANAGEMENT'}
           </div>
           <h2>
             <Users size={24} />
-            {bengali ? '????? ???????????' : 'Owner Management'}
+            {bengali ? 'মালিক ব্যবস্থাপনা' : 'Owner Management'}
           </h2>
           <p>
             {bengali
-              ? '?? ??????? ???????? ?????? ??? ????????? ?????? ??????'
+              ? 'এই ব্যবসার মালিক এবং তাদের সদস্যপদের অবস্থা দেখুন।'
               : 'View the owners and their membership status for this business.'}
           </p>
         </div>
-        <button
-          className="owner-add-button"
-          onClick={() => setShowCreateForm(!showCreateForm)}
-        >
-          <UserPlus size={16} />
-          {bengali ? 'নতুন মালিক যোগ করুন' : 'Add Owner'}
-        </button>
-        <button
-          className="owner-refresh"
-          onClick={() => void loadOwners(true)}
-          disabled={refreshing}
-        >
-          <RefreshCw size={16} className={refreshing ? 'owner-spin' : ''} />
-          {bengali ? '???????' : 'Refresh'}
-        </button>
+        <div className="owner-heading-actions">
+          <button
+            type="button"
+            className="primary-button"
+            onClick={() => setShowCreateForm(!showCreateForm)}
+          >
+            <UserPlus size={16} />
+            {bengali ? 'নতুন মালিক যোগ করুন' : 'Add Owner'}
+          </button>
+          <button
+            type="button"
+            className="outline-button owner-refresh"
+            onClick={() => void loadOwners(true)}
+            disabled={refreshing}
+          >
+            <RefreshCw size={16} className={refreshing ? 'owner-spin' : ''} />
+            {bengali ? 'রিফ্রেশ' : 'Refresh'}
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -390,7 +394,7 @@ export default function OwnerManagement({
             <Users size={21} />
           </div>
           <div>
-            <span>{bengali ? '??? ?????' : 'Total Owners'}</span>
+            <span>{bengali ? 'মোট মালিক' : 'Total Owners'}</span>
             <strong>{owners.length}</strong>
           </div>
         </div>
@@ -400,7 +404,7 @@ export default function OwnerManagement({
             <UserCheck size={21} />
           </div>
           <div>
-            <span>{bengali ? '??????? ?????' : 'Active Owners'}</span>
+            <span>{bengali ? 'সক্রিয় মালিক' : 'Active Owners'}</span>
             <strong>{activeOwners}</strong>
           </div>
         </div>
@@ -410,7 +414,7 @@ export default function OwnerManagement({
             <UserX size={21} />
           </div>
           <div>
-            <span>{bengali ? '?????????? ?????' : 'Inactive Owners'}</span>
+            <span>{bengali ? 'নিষ্ক্রিয় মালিক' : 'Inactive Owners'}</span>
             <strong>{inactiveOwners}</strong>
           </div>
         </div>
@@ -419,15 +423,15 @@ export default function OwnerManagement({
       <div className="owner-card">
         <div className="owner-card-heading">
           <div>
-            <h3>{bengali ? '???????? ??????' : 'Owners List'}</h3>
+            <h3>{bengali ? 'মালিকদের তালিকা' : 'Owners List'}</h3>
             <span>
               {bengali
-                ? '?? ??????? ????? ????? ???????'
+                ? 'এই ব্যবসার সঙ্গে যুক্ত মালিকরা'
                 : 'Owners associated with this business'}
             </span>
           </div>
           <span className="owner-count">
-            {owners.length} {bengali ? '??' : 'Owner(s)'}
+            {owners.length} {bengali ? 'জন' : 'Owner(s)'}
           </span>
         </div>
 
@@ -435,7 +439,7 @@ export default function OwnerManagement({
           <div className="owner-empty">
             <UserRound size={34} />
             <strong>
-              {bengali ? '???? ????? ?????? ??????' : 'No owners found'}
+              {bengali ? 'কোনো মালিক পাওয়া যায়নি' : 'No owners found'}
             </strong>
           </div>
         ) : (
@@ -451,8 +455,8 @@ export default function OwnerManagement({
                     <strong>{owner.full_name}</strong>
                     <span className={`owner-status ${owner.status}`}>
                       {owner.status === 'active'
-                        ? (bengali ? '???????' : 'Active')
-                        : (bengali ? '??????????' : 'Inactive')}
+                        ? (bengali ? 'সক্রিয়' : 'Active')
+                        : (bengali ? 'নিষ্ক্রিয়' : 'Inactive')}
                     </span>
                   </div>
 
@@ -476,7 +480,7 @@ export default function OwnerManagement({
 
                   <small>
                     <ShieldCheck size={13} />
-                    {bengali ? '????? ???????: ' : 'Member since: '}
+                    {bengali ? 'সদস্য হয়েছেন: ' : 'Member since: '}
                     {formatDate(owner.created_at)}
                   </small>
                                     {currentUserId && owner.user_id !== currentUserId && (

@@ -11,6 +11,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+  flex-wrap: wrap;
 }
 
 .owner-eyebrow {
@@ -40,7 +41,6 @@
   font-size: 13px;
 }
 
-.owner-refresh,
 .owner-alert button {
   display: inline-flex;
   align-items: center;
@@ -57,10 +57,16 @@
   cursor: pointer;
 }
 
-.owner-refresh:hover,
 .owner-alert button:hover {
   border-color: #aab5d9;
   background: #f7f8fc;
+}
+
+.owner-heading-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .owner-refresh:disabled {
@@ -313,9 +319,8 @@
     font-size: 20px;
   }
 
-  .owner-refresh {
-    padding: 0 10px;
-    font-size: 12px;
+  .owner-heading-actions {
+    width: 100%;
   }
 
   .owner-list-item {
@@ -330,27 +335,6 @@
     flex-direction: column;
     gap: 7px;
   }
-}
-
-/* Add Owner Button */
-.owner-add-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 11px 16px;
-  border: none;
-  border-radius: 9px;
-  background: #2563eb;
-  color: #fff;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-.owner-add-button:hover {
-  background: #1d4ed8;
 }
 
 /* Create Owner Card */

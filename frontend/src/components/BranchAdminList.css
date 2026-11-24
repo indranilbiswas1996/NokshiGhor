@@ -89,6 +89,22 @@
   margin-bottom: 16px;
 }
 
+.branch-admin-card-audit {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.branch-admin-card-audit:focus-visible {
+  outline: 2px solid var(--primary-color, #334155);
+  outline-offset: 4px;
+}
+
 .branch-admin-avatar {
   display: flex;
   align-items: center;
@@ -163,6 +179,33 @@
 .branch-admin-card-meta svg {
   flex-shrink: 0;
   margin-top: 2px;
+}
+
+.branch-admin-card-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.branch-admin-assign-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 8px 11px;
+  border: 1px solid var(--border-color, #d1d5db);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--primary-color, #334155);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.branch-admin-assign-button:hover {
+  background: var(--primary-light, #e9edf5);
 }
 
 .branch-admin-notes {

@@ -94,13 +94,14 @@ export default function MasterBranchAdminList({
       }
     })
 
-    return Array.from(grouped.values()).map((admin) => ({
-      ...admin,
-      assignments: [...admin.assignments].sort(
-        (a, b) =>
-          a.branch_name.localeCompare(b.branch_name)
-      ),
-    }))
+    return Array.from(grouped.values())
+      .map((admin) => ({
+        ...admin,
+        assignments: [...admin.assignments].sort(
+          (a, b) => a.branch_name.localeCompare(b.branch_name)
+        ),
+      }))
+      .sort((a, b) => a.full_name.localeCompare(b.full_name))
   }, [admins])
 
   // Search across Admin details and all assigned Branches

@@ -70,6 +70,8 @@ class BranchAdminListResponse(BaseModel):
     admins: list[dict] = []
 class MasterBranchAdminListResponse(BaseModel):
     admins: list[dict] = []
+class UnassignedBranchAdminListResponse(BaseModel):
+    admins: list[dict] = []
 
 
 class BranchAdminAuditHistoryResponse(BaseModel):
