@@ -9,6 +9,7 @@ from app.routes.tax import router as tax_router
 from app.routes.owner import router as owner_router
 from fastapi.middleware.cors import CORSMiddleware
 from app.routes.branch import router as branch_router
+from app.routes.super_admin import router as super_admin_router
 app = FastAPI(
     title="NokshiGhor API",
     description="Smart Electrical & Interior Business Management System",
@@ -31,6 +32,7 @@ app.include_router(opening_stock_router)
 app.include_router(tax_router)
 app.include_router(owner_router)
 app.include_router(branch_router)
+app.include_router(super_admin_router)
 @app.get("/")
 def home():
     return {

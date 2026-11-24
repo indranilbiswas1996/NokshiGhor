@@ -7,13 +7,15 @@ import './AuthScreen.css'
 
 interface AuthScreenProps {
   onAuthenticated: (business: Business) => void
+  onOpenSuperAdmin: () => void
 }
 
-export default function AuthScreen({ onAuthenticated }: AuthScreenProps) {
+export default function AuthScreen({ onAuthenticated, onOpenSuperAdmin }: AuthScreenProps) {
   const [mode, setMode] = useState<'login' | 'business'>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [businesses, setBusinesses] = useState<Business[]>([])
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false)
   const [loading, setLoading] = useState(false)
   const [checking, setChecking] = useState(true)
   const [error, setError] = useState('')
@@ -34,6 +36,7 @@ export default function AuthScreen({ onAuthenticated }: AuthScreenProps) {
         try {
           const result = await authApi.getBusinesses()
           setBusinesses(result.businesses)
+          setIsSuperAdmin(result.is_super_admin)
           setMode('business')
         } catch {
           authApi.logout()
@@ -54,8 +57,9 @@ export default function AuthScreen({ onAuthenticated }: AuthScreenProps) {
     try {
       await authApi.login({ email, password })
       const result = await authApi.getBusinesses()
+      setIsSuperAdmin(result.is_super_admin)
 
-      if (result.businesses.length === 0) {
+      if (result.businesses.length === 0 && !result.is_super_admin) {
         setError('No business is associated with this account.')
         authApi.logout()
         return
@@ -148,6 +152,16 @@ export default function AuthScreen({ onAuthenticated }: AuthScreenProps) {
               <p>Choose the workspace you want to continue with.</p>
             </div>
 
+            {isSuperAdmin && (
+              <button
+                type="button"
+                className="outline-button super-admin-manage-link"
+                onClick={onOpenSuperAdmin}
+              >
+                Manage Businesses
+              </button>
+            )}
+
             <div className="business-options">
               {businesses.map((business) => (
                 <button
@@ -164,6 +178,9 @@ export default function AuthScreen({ onAuthenticated }: AuthScreenProps) {
                   <ArrowRight size={18} />
                 </button>
               ))}
+              {businesses.length === 0 && !isSuperAdmin && (
+                <p className="auth-error">No active business memberships are available.</p>
+              )}
             </div>
 
             {error && <p className="auth-error">{error}</p>}

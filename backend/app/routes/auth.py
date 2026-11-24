@@ -64,12 +64,19 @@ def login(
 @router.get("/me", response_model=UserResponse)
 def get_my_profile(
     current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
+    is_super_admin = db.execute(
+        text("SELECT public.fn_is_super_admin(CAST(:user_id AS UUID))"),
+        {"user_id": current_user["id"]},
+    ).scalar_one()
+
     return UserResponse(
         id=current_user["id"],
         full_name=current_user["full_name"],
         email=current_user["email"],
         profile_picture=current_user["profile_picture"],
+        is_super_admin=is_super_admin,
     )
 @router.get("/businesses", response_model=BusinessListResponse)
 def get_my_businesses(
@@ -80,6 +87,10 @@ def get_my_businesses(
         db=db,
         user_id=current_user["id"],
     )
+    is_super_admin = db.execute(
+        text("SELECT public.fn_is_super_admin(CAST(:user_id AS UUID))"),
+        {"user_id": current_user["id"]},
+    ).scalar_one()
 
     return BusinessListResponse(
         businesses=[
@@ -87,6 +98,7 @@ def get_my_businesses(
             for business in businesses
         ],
         total=len(businesses),
+        is_super_admin=is_super_admin,
     )
 @router.post(
     "/businesses/select",

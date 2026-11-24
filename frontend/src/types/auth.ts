@@ -4,6 +4,7 @@ export interface User {
   full_name: string
   email: string
   profile_picture: string | null
+  is_super_admin: boolean
 }
 
 export interface LoginRequest {
@@ -29,6 +30,7 @@ export interface Business {
 export interface BusinessListResponse {
   businesses: Business[]
   total: number
+  is_super_admin: boolean
 }
 
 export interface BusinessSelectRequest {

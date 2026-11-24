@@ -13,6 +13,7 @@ class UserResponse(BaseModel):
     full_name: str
     email: str
     profile_picture: str | None = None
+    is_super_admin: bool = False
 
 
 class LoginResponse(BaseModel):

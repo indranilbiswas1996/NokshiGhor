@@ -5,7 +5,7 @@ import {
   Wallet, BriefcaseBusiness, ReceiptText, Users, GitBranch, Settings,
   Bell, Search, Menu, X, TrendingUp,
   ArrowUpRight, CalendarDays, Plus,
-  ChevronDown, Zap, Languages, CircleHelp, Palette, LogOut
+  ChevronDown, Zap, Languages, CircleHelp, Palette, LogOut, Building2
 } from 'lucide-react'
 import './App.css'
 import AuthScreen from './components/AuthScreen'
@@ -17,6 +17,7 @@ import SaleDetails from './components/SaleDetails'
 import OpeningStock from './components/OpeningStock'
 import OwnerManagement from './components/OwnerManagement'
 import BranchManagement from './components/BranchManagement'
+import SuperAdminManagement from './components/SuperAdminManagement'
 import { branchApi } from './api/branch'
 import type { Branch } from './api/branch'
 const navigation = [
@@ -95,6 +96,7 @@ function App() {
   const [selectedSaleId, setSelectedSaleId] = useState<string | null>(null)
   const [salesRefreshKey, setSalesRefreshKey] = useState(0)
   const [isCreatingOpeningStock, setIsCreatingOpeningStock] = useState(false)
+  const [showSuperAdminBeforeBusiness, setShowSuperAdminBeforeBusiness] = useState(false)
 
   const bengali = language === 'bn'
   const [theme, setTheme] = useState(() => {
@@ -162,6 +164,7 @@ const [branchSelectionLoaded, setBranchSelectionLoaded] = useState(false)
 const [selectedBranchId, setSelectedBranchId] = useState('all')
 
 const handleAuthenticated = useCallback((business: Business) => {
+  setShowSuperAdminBeforeBusiness(false)
   setAuthenticatedBusiness(business)
 }, [])
 
@@ -207,7 +210,7 @@ useEffect(() => {
       const selectionKey = `nokshighor-selected-branch:${authenticatedBusiness.id}`
       const savedSelection = sessionStorage.getItem(selectionKey)
       const initialBranch = sortedBranches.find(
-        (branch) => branch.id === savedSelection && branch.is_active
+        (branch) => branch.id === savedSelection
       ) || sortedBranches.find(
         (branch) => branch.is_default && branch.is_active
       ) || sortedBranches.find((branch) => branch.is_active)
@@ -369,7 +372,20 @@ useEffect(() => {
     .replace(/[_-]+/g, ' ')
     .replace(/\b\w/g, (letter) => letter.toUpperCase())
 if (!authenticatedBusiness) {
-  return <AuthScreen onAuthenticated={handleAuthenticated} />
+  if (showSuperAdminBeforeBusiness) {
+    return (
+      <SuperAdminManagement
+        onClose={() => setShowSuperAdminBeforeBusiness(false)}
+      />
+    )
+  }
+
+  return (
+    <AuthScreen
+      onAuthenticated={handleAuthenticated}
+      onOpenSuperAdmin={() => setShowSuperAdminBeforeBusiness(true)}
+    />
+  )
 }
   return (
     <div
@@ -445,9 +461,7 @@ if (!authenticatedBusiness) {
                   type="button"
                   role="menuitemradio"
                   aria-checked={selectedBranchId === branch.id}
-                  aria-disabled={!branch.is_active}
                   className={selectedBranchId === branch.id ? 'selected' : ''}
-                  disabled={!branch.is_active}
                   onClick={() => {
                     setSelectedBranchId(branch.id)
                     setBranchMenuOpen(false)
@@ -484,7 +498,21 @@ if (!authenticatedBusiness) {
               })}
             </div>
           ))}
+          {authenticatedUser?.is_super_admin && (
+            <div className="nav-group">
+              <p className="nav-heading">Platform</p>
+              <button
+                className={`nav-item ${activePage === 'Super Admin' ? 'active' : ''}`}
+                onClick={() => setActivePage('Super Admin')}
+                title="Business Management"
+              >
+                <Building2 size={19} strokeWidth={1.8} />
+                <span>Business Management</span>
+              </button>
+            </div>
+          )}
         </nav>
+  'Super Admin': 'Business Management',
 
         <div className="sidebar-bottom">
           <button
@@ -634,6 +662,9 @@ if (!authenticatedBusiness) {
           )}
           {activePage === 'Branch Management' && (
             <BranchManagement bengali={bengali} />
+          )}
+          {activePage === 'Super Admin' && authenticatedUser?.is_super_admin && (
+            <SuperAdminManagement onClose={() => setActivePage('Dashboard')} />
           )}
           {activePage === 'Inventory' && !isCreatingOpeningStock && (
             <section className="panel transactions-panel">

@@ -15,6 +15,7 @@ class BusinessResponse(BaseModel):
 class BusinessListResponse(BaseModel):
     businesses: list[BusinessResponse]
     total: int
+    is_super_admin: bool = False
 
 class BusinessSelectRequest(BaseModel):
     business_id: UUID

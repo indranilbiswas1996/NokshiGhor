@@ -1,0 +1,45 @@
+For direct database execution, first generate an Argon2 hash using the backend’s password library. Run this in PowerShell from the project root and enter the password at the prompt:
+
+```powershell
+.\backend\.venv\Scripts\python.exe -c "from getpass import getpass; from pwdlib import PasswordHash; print(PasswordHash.recommended().hash(getpass('New password: ')))"
+```
+
+Paste the resulting hash in place of `REPLACE_WITH_ARGON2_HASH`, then execute this SQL. It creates a user and Super Admin entry but **no business membership**:
+
+```sql
+BEGIN;
+
+DO $$
+DECLARE
+    new_user_id UUID;
+BEGIN
+    INSERT INTO public.users (
+        full_name,
+        email,
+        password_hash,
+        status
+    )
+    VALUES (
+        'Super Admin Name',
+        'superadmin@example.com',
+        'REPLACE_WITH_ARGON2_HASH',
+        'active'
+    )
+    RETURNING id INTO new_user_id;
+
+    INSERT INTO public.super_admin_users (user_id, created_by)
+    VALUES (new_user_id, new_user_id);
+END
+$$;
+
+COMMIT;
+```
+
+Verify the account afterward:
+
+```sql
+SELECT u.email, public.fn_is_super_admin(u.id) AS is_super_admin
+FROM public.users u
+WHERE LOWER(u.email) = LOWER('superadmin@example.com')
+  AND u.deleted_at IS NULL;
+```
