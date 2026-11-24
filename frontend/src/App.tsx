@@ -9,7 +9,7 @@ import {
 } from 'lucide-react'
 import './App.css'
 import AuthScreen from './components/AuthScreen'
-import type { Business } from './types/auth'
+import type { Business, User } from './types/auth'
 import { salesApi } from './api/sales'
 import type { SaleListItem } from './types/sales'
 import NewSaleForm from './components/NewSaleForm'
@@ -142,10 +142,46 @@ function App() {
 })
 const [authenticatedBusiness, setAuthenticatedBusiness] =
 useState<Business | null>(null)
+const [authenticatedUser, setAuthenticatedUser] = useState<User | null>(null)
+const [profileOpenRequest, setProfileOpenRequest] = useState(0)
 
 const handleAuthenticated = useCallback((business: Business) => {
   setAuthenticatedBusiness(business)
 }, [])
+
+useEffect(() => {
+  if (!authenticatedBusiness) {
+    setAuthenticatedUser(null)
+    return
+  }
+
+  let current = true
+
+  void authApi.getProfile()
+    .then((user) => {
+      if (current) setAuthenticatedUser(user)
+    })
+    .catch((error) => {
+      console.error('Unable to load current profile:', error)
+    })
+
+  return () => {
+    current = false
+  }
+}, [authenticatedBusiness])
+
+const openOwnerProfile = () => {
+  setActivePage('Owner Management')
+  setProfileOpenRequest((request) => request + 1)
+}
+
+const handleProfileUpdated = (profile: {
+  full_name: string
+  profile_picture: string | null
+}) => {
+  setAuthenticatedUser((user) => user ? { ...user, ...profile } : user)
+}
+
 const handleLogout = async () => {
   try {
     await authApi.logout()
@@ -244,6 +280,15 @@ useEffect(() => {
     { label: bengali ? 'স্টক মূল্য' : 'Stock Value', value: '₹ 8.42L', change: '4.5%', up: true, icon: Boxes, color: 'purple', note: bengali ? 'মোট পণ্যের মূল্য' : 'total inventory value' },
     { label: bengali ? 'আজকের লাভ' : "Today's Profit", value: '₹ 6,330', change: '+15.3%', up: true, icon: TrendingUp, color: 'orange', note: bengali ? 'গতকালের তুলনায়' : 'vs yesterday' },
   ]
+  const profileInitials = (authenticatedUser?.full_name || 'OW')
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join('')
+  const designation = (authenticatedBusiness ? authenticatedBusiness.role_name : 'owner')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\b\w/g, (letter) => letter.toUpperCase())
 if (!authenticatedBusiness) {
   return <AuthScreen onAuthenticated={handleAuthenticated} />
 }
@@ -322,11 +367,23 @@ if (!authenticatedBusiness) {
             <span>{bengali ? 'সেটিংস' : 'Settings'}</span>
           </button>
           <button className="nav-item"><CircleHelp size={19} /><span>{bengali ? 'সাহায্য' : 'Help & Support'}</span></button>
-          <div className="sidebar-profile">
-            <div className="profile-avatar">OW</div>
-            <div className="profile-info"><strong>Business Owner</strong><span>Administrator</span></div>
+          <button
+            type="button"
+            className="sidebar-profile"
+            onClick={openOwnerProfile}
+            aria-label="Open profile"
+          >
+            <div className="profile-avatar">
+              {authenticatedUser?.profile_picture ? (
+                <img src={authenticatedUser.profile_picture} alt="" />
+              ) : profileInitials}
+            </div>
+            <div className="profile-info">
+              <strong>{authenticatedUser?.full_name || 'Business Owner'}</strong>
+              <span>{designation}</span>
+            </div>
             <ChevronDown size={16} />
-          </div>
+          </button>
         </div>
       </aside>
 
@@ -387,7 +444,17 @@ if (!authenticatedBusiness) {
             <div className="search-box"><Search size={17} /><input placeholder={bengali ? 'খুঁজুন...' : 'Search anything...'} /></div>
             <button className="icon-button language-button" onClick={() => setLanguage(bengali ? 'en' : 'bn')} title="Change language"><Languages size={19} /><span>{bengali ? 'EN' : 'বাংলা'}</span></button>
             <button className="icon-button notification-button" aria-label="Notifications"><Bell size={19} /><i /></button>
-            <div className="topbar-avatar">OW</div>
+            <button
+              type="button"
+              className="topbar-avatar"
+              onClick={openOwnerProfile}
+              aria-label="Open profile"
+              title="Open profile"
+            >
+              {authenticatedUser?.profile_picture ? (
+                <img src={authenticatedUser.profile_picture} alt="" />
+              ) : profileInitials}
+            </button>
             <button
               className="icon-button"
               onClick={handleLogout}
@@ -428,7 +495,11 @@ if (!authenticatedBusiness) {
               </div>
             )}
           {activePage === 'Owner Management' && (
-            <OwnerManagement bengali={bengali} />
+            <OwnerManagement
+              bengali={bengali}
+              openProfileRequest={profileOpenRequest}
+              onProfileUpdated={handleProfileUpdated}
+            />
           )}
           {activePage === 'Branch Management' && (
             <BranchManagement bengali={bengali} />

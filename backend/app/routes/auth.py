@@ -69,6 +69,7 @@ def get_my_profile(
         id=current_user["id"],
         full_name=current_user["full_name"],
         email=current_user["email"],
+        profile_picture=current_user["profile_picture"],
     )
 @router.get("/businesses", response_model=BusinessListResponse)
 def get_my_businesses(

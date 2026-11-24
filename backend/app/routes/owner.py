@@ -97,4 +97,6 @@ def edit_my_owner_profile(
         user_id=str(current_user["id"]),
         full_name=payload.full_name,
         phone=payload.phone,
+        profile_picture=payload.profile_picture,
+        update_picture="profile_picture" in payload.model_fields_set,
     )

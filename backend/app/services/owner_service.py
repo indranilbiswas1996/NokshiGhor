@@ -108,6 +108,25 @@ def create_owner(
         )
 
         owner = result.scalar_one()
+
+        if payload.profile_picture is not None:
+            db.execute(
+                text("""
+                    SELECT public.fn_owner_profile_picture_update(
+                        CAST(:business_id AS UUID),
+                        CAST(:actor_user_id AS UUID),
+                        CAST(:target_user_id AS UUID),
+                        :profile_picture
+                    )
+                """),
+                {
+                    "business_id": business_id,
+                    "actor_user_id": user_id,
+                    "target_user_id": owner["user_id"],
+                    "profile_picture": payload.profile_picture,
+                },
+            )
+
         db.commit()
 
         return owner
@@ -205,6 +224,8 @@ def update_owner_profile(
     user_id: str,
     full_name: str,
     phone: str | None,
+    profile_picture: str | None,
+    update_picture: bool,
 ) -> dict:
     """
     Update only the authenticated Owner's own name and phone.
@@ -230,6 +251,26 @@ def update_owner_profile(
         )
 
         profile = result.scalar_one()
+
+        if update_picture:
+            picture_result = db.execute(
+                text("""
+                    SELECT public.fn_owner_profile_picture_update(
+                        CAST(:business_id AS UUID),
+                        CAST(:actor_user_id AS UUID),
+                        CAST(:target_user_id AS UUID),
+                        :profile_picture
+                    )
+                """),
+                {
+                    "business_id": business_id,
+                    "actor_user_id": user_id,
+                    "target_user_id": user_id,
+                    "profile_picture": profile_picture,
+                },
+            ).scalar_one()
+            profile["profile"]["profile_picture"] = picture_result["profile_picture"]
+
         db.commit()
 
         return profile

@@ -1,0 +1,178 @@
+বুঝেছি। তুমি NokshiGhor POS Software-এর Tax Module নিয়ে শুরু থেকে এখন পর্যন্ত কী কী আলোচনা, সিদ্ধান্ত ও Development হয়েছে, তার সারাংশ চাইছ। তোমার ব্যক্তিগত Income Tax বা ITR-এর কথা নয়।
+
+নিচে NokshiGhor-এর Tax Module-এর আলোচনাগুলো আলাদা করে সাজালাম।
+NokshiGhor — Tax Module Summary
+১. Tax Module তৈরির মূল উদ্দেশ্য
+NokshiGhor-এ Tax System এমনভাবে তৈরি করার সিদ্ধান্ত হয়েছিল, যাতে:
+- প্রতিটি Product-এর Tax Rate আলাদা হতে পারে।
+- একই Business-এ বিভিন্ন GST Rate ব্যবহার করা যায়।
+- GST-এর একাধিক Component থাকতে পারে।
+- Tax Rate পরিবর্তন হলেও পুরনো Invoice-এর Tax Calculation পরিবর্তিত না হয়।
+- India GST দিয়ে শুরু হলেও ভবিষ্যতে অন্য Tax System যোগ করা যায়।
+- Tax Calculation Backend থেকে হবে; Frontend-এ Hardcoded Calculation থাকবে না।
+২. Product-wise Tax Support
+তুমি বিশেষভাবে জানতে চেয়েছিলে, বিভিন্ন Product-এর GST Rate আলাদা হতে পারে কি না।
+
+সিদ্ধান্ত:
+- প্রতিটি Product-এর নিজস্ব Tax Rate থাকবে।
+- Product-এর Tax Rate Sale-এর সময় sale_items.tax_rate-এ Snapshot হিসেবে সংরক্ষিত হবে।
+- প্রতিটি Sale Item-এর Tax Amount আলাদাভাবে হিসাব হবে।
+- পুরনো Invoice-এর Tax Rate পরবর্তীতে Product-এর Tax Rate পরিবর্তন করলেও বদলাবে না।
+উদাহরণ:
+Product	GST Rate
+Product A	5%
+Product B	12%
+Product C	18%
+Product D	28%
+
+৩. Configurable Tax Engine Architecture
+শুধু products.tax_rate দিয়ে পুরো Tax System পরিচালনা না করে একটি Configurable Multi-component Tax Engine তৈরির সিদ্ধান্ত হয়েছিল।
+
+প্রধান Database Tables:
+Table	কাজ
+tax_types	GST-এর মতো Tax Type সংরক্ষণ
+tax_components	CGST, SGST, IGST-এর মতো Component
+tax_profiles	Tax Profile তৈরি
+tax_profile_components	Profile-এর সঙ্গে Component যুক্ত করা
+product_tax_assignments	Product-এর Tax Profile নির্ধারণ
+sale_item_tax_details	প্রতিটি Sale Item-এর Tax Details ও Snapshot
+
+এখানে Tax Component-এর নাম Hardcode করা হবে না। ভবিষ্যতে নতুন Component যোগ করা যাবে।
+৪. GST Components এবং Calculation
+India GST-এর জন্য এই Structure আলোচনা হয়েছিল:
+Example: GST 18%
+CGST
+
+9%
+
+SGST
+
+9%
+
+
+Total GST
+18%
+
+
+Tax Calculation-এর নিয়ম:
+- Intra-state Sale: CGST + SGST।
+- Inter-state Sale: IGST।
+- Business State এবং Place of Supply অনুযায়ী Tax Component নির্ধারিত হবে।
+- Tax Inclusive এবং Tax Exclusive — দুই ধরনের Calculation Support থাকবে।
+- Rounding Mode এবং Decimal Precision Configurable হবে।
+৫. Tax Profile এবং Version Management
+Tax Profile-এর মাধ্যমে বিভিন্ন GST Rate পরিচালনার সিদ্ধান্ত হয়েছিল।
+
+উদাহরণ:
+- GST_5
+- GST_12
+- GST_18
+- GST_28
+প্রতিটি Tax Profile-এর একাধিক Version থাকতে পারবে।
+
+প্রতিটি Version-এ থাকবে:
+- Version Number
+- Calculation Mode
+- Rounding Mode
+- Decimal Precision
+- Effective From
+- Ordered Tax Components
+- Historical Component Snapshot
+এতে ভবিষ্যতে GST Rate পরিবর্তন হলেও পুরনো Sale-এর Tax Details অক্ষত থাকবে।
+৬. Automatic Product Tax Mapping
+Database Architecture-এ আরও রাখা হয়েছিল:
+- Automatic Product Tax Mapping Rule Sets
+- Automatic Product Tax Mapping Rules
+- Scheduled Tax Profile Activation
+- Tax Activation Logs
+অর্থাৎ ভবিষ্যতে নির্দিষ্ট Rule অনুযায়ী Product-এ Tax Profile Assign করা এবং নির্দিষ্ট তারিখ থেকে Tax Profile কার্যকর করার ব্যবস্থা থাকবে।
+৭. Business Tax Settings
+প্রতিটি Business-এর নিজস্ব Tax Settings থাকবে।
+
+এটি গুরুত্বপূর্ণ, কারণ NokshiGhor একটি Multi-Business Software। এক Business-এর Tax Configuration অন্য Business-এর ওপর প্রভাব ফেলবে না।
+
+Tax Configuration, Profile এবং Calculation Business অনুযায়ী পৃথক থাকবে।
+৮. Database Development Status
+Migration 024 Applied
+Migration 024-এ Tax Engine-এর Database Foundation তৈরি করা হয়েছিল।
+
+এর মধ্যে ছিল:
+- Tax Types
+- Tax Components
+- Versioned Tax Profiles
+- Profile Components
+- Automatic Product Tax Mapping Rules
+- Scheduled Activation এবং Logs
+- Sale Item Historical Tax Snapshots
+- Tax Audit Logs
+- Business Tax Settings
+- প্রয়োজনীয় Indexes, Constraints এবং Triggers
+৯. Backend API Development Status
+Tax Profile Management-এর জন্য নিচের চারটি POST API তৈরি হয়েছিল এবং Swagger-এ দেখা গিয়েছিল।
+API	উদ্দেশ্য
+POST /tax/types	Tax Type তৈরি
+POST /tax/components	Tax Component তৈরি
+POST /tax/profiles	Tax Profile তৈরি
+POST /tax/profiles/{tax_profile_id}/versions	Profile Version তৈরি
+
+Tax Type Creation সফল হয়েছিল।
+HTTP 201 — Success
+তৈরি করা Tax Type:
+- Name: GST
+- Description: Goods and Services Tax
+- ID: 71476851-7083-44d2-b6dc-b63fc835a27e
+- Status: Active
+১০. GST 18% Configuration Example
+আমরা একটি বাস্তব Configuration Example-ও তৈরি করেছিলাম।
+Field	Value
+Tax Type	GST
+Tax Profile	GST_18
+CGST	9%
+SGST	9%
+Calculation Mode	exclusive
+Rounding Mode	half_up
+Precision	2
+Effective From	19-Nov-2026
+
+Profile Version-এর Component-গুলো Calculation Order অনুযায়ী থাকবে।
+১১. গুরুত্বপূর্ণ Pending Issue
+একটি নির্দিষ্ট Backend Response Issue তখনও বাকি ছিল।
+
+Tax Profile Version তৈরি করার API তখন শুধু Version UUID ফেরত দিচ্ছিল।
+
+কিন্তু প্রয়োজন ছিল Component Snapshot-সহ সম্পূর্ণ Response:
+- component_code_snapshot
+- component_name_snapshot
+- jurisdiction_snapshot
+- tax_rate
+- calculation_order
+তুমি এই Response Fix করার আগে Git Changes Commit করতে চেয়েছিলে। তাই ওই Fix তখন স্থগিত রাখা হয়েছিল।
+
+১২. Overall Tax Module Roadmap Status
+Feature	সর্বশেষ জানা অবস্থা
+Tax Engine Database Foundation	Done
+Tax Type API	Done
+Tax Component API	Registered
+Tax Profile API	Registered
+Tax Profile Version API	Registered
+GST Tax Type Creation	Tested
+GST 18% Profile Configuration	Example Prepared
+Version Component Snapshot Response	Pending Fix
+Frontend Tax Management UI	Not Confirmed
+End-to-End Tax Calculation Testing	Not Confirmed
+
+এগুলি সর্বশেষ পাওয়া Development History অনুযায়ী; পরবর্তী সময়ে তুমি কোনও কাজ সম্পন্ন করে থাকলে তার Status এখানে আপডেট করা হয়নি।
+১৩. Tax Module-এর মূল Design Principle
+আমাদের আলোচনার ভিত্তিতে NokshiGhor Tax Module-এর সবচেয়ে গুরুত্বপূর্ণ নিয়মগুলো হলো:
+1. Tax Type এবং Component Configurable হবে।
+2. Product-wise Tax Rate Support থাকবে।
+3. Tax Profile Versioning থাকবে।
+4. Tax Calculation Backend-এ হবে।
+5. Sale-এর সময় Tax Snapshot সংরক্ষিত হবে।
+6. পুরনো Invoice-এর Tax কখনও পরিবর্তিত হবে না।
+7. Business-wise Tax Isolation থাকবে।
+8. Tax Configuration এবং পরিবর্তনের Audit History থাকবে।
+9. India GST দিয়ে শুরু হলেও Architecture Future-ready থাকবে।
+পরবর্তী Development Step: Version Component Snapshot Response Fix সম্পন্ন করা, তারপর Tax Profile Management-এর Frontend UI তৈরি করে API-এর সঙ্গে Connect করা এবং বাস্তব Sale-এর মাধ্যমে Tax Calculation Test করা।
+
+এটাই NokshiGhor-এর Tax Module নিয়ে আমাদের আগের আলোচনার সারাংশ।

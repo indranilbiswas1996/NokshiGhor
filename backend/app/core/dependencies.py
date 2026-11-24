@@ -60,7 +60,7 @@ def get_current_user(
         )
 
     statement = text("""
-        SELECT id, full_name, email, status
+        SELECT id, full_name, email, status, profile_picture
         FROM public.fn_auth_user_by_id(:user_id)
     """)
 

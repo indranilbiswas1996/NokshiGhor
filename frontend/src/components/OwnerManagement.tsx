@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { isAxiosError } from 'axios'
 import {
   Users,
@@ -22,6 +22,34 @@ import type { OwnerCreateRequest } from '../types/owner'
 import { authApi } from '../api/auth'
 interface OwnerManagementProps {
   bengali?: boolean
+  openProfileRequest?: number
+  onProfileUpdated?: (profile: {
+    full_name: string
+    profile_picture: string | null
+  }) => void
+}
+
+const MAX_PROFILE_PICTURE_BYTES = 50 * 1024
+const ACCEPTED_PROFILE_PICTURE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+
+function readProfilePicture(file: File): Promise<string> {
+  if (file.size > MAX_PROFILE_PICTURE_BYTES) {
+    return Promise.reject(new Error('Profile picture must be no larger than 50 KB.'))
+  }
+
+  if (!ACCEPTED_PROFILE_PICTURE_TYPES.includes(file.type)) {
+    return Promise.reject(new Error('Choose a JPEG, PNG, or WebP image.'))
+  }
+
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      if (typeof reader.result === 'string') resolve(reader.result)
+      else reject(new Error('Unable to read the selected image.'))
+    }
+    reader.onerror = () => reject(new Error('Unable to read the selected image.'))
+    reader.readAsDataURL(file)
+  })
 }
 function getErrorMessage(error: unknown): string {
   if (isAxiosError(error)) {
@@ -33,6 +61,8 @@ function getErrorMessage(error: unknown): string {
 
 export default function OwnerManagement({
   bengali = false,
+  openProfileRequest = 0,
+  onProfileUpdated,
 }: OwnerManagementProps) {
   const [owners, setOwners] = useState<Owner[]>([])
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
@@ -45,15 +75,18 @@ export default function OwnerManagement({
   const [showEditProfile, setShowEditProfile] = useState(false)
   const [profileSubmitting, setProfileSubmitting] = useState(false)
   const [profileError, setProfileError] = useState('')
+  const handledProfileRequest = useRef(0)
   const [profileData, setProfileData] = useState({
     full_name: '',
     phone: '',
+    profile_picture: null as string | null,
   })
   const [formData, setFormData] = useState<OwnerCreateRequest>({
     full_name: '',
     email: '',
     phone: '',
     password: '',
+    profile_picture: null,
   })
   const loadOwners = useCallback(async (refresh = false) => {
     if (refresh) setRefreshing(true)
@@ -116,6 +149,7 @@ export default function OwnerManagement({
         email: '',
         phone: '',
         password: '',
+        profile_picture: null,
       })
 
       setShowCreateForm(false)
@@ -126,6 +160,20 @@ export default function OwnerManagement({
       setSubmitting(false)
     }
   }
+
+  const handleProfilePictureFile = async (
+    file: File,
+    updatePicture: (picture: string) => void,
+    reportError: (message: string) => void,
+  ) => {
+    try {
+      updatePicture(await readProfilePicture(file))
+      reportError('')
+    } catch (err) {
+      reportError(getErrorMessage(err))
+    }
+  }
+
   const handleOwnerStatusChange = async (owner: Owner) => {
   const nextStatus = owner.status === 'active' ? 'inactive' : 'active'
 
@@ -160,6 +208,7 @@ export default function OwnerManagement({
     setProfileData({
       full_name: owner.full_name,
       phone: owner.phone || '',
+      profile_picture: owner.profile_picture,
     })
     setShowEditProfile(true)
     setProfileError('')
@@ -189,11 +238,16 @@ export default function OwnerManagement({
     setProfileError('')
 
     try {
-      await ownerApi.updateMyProfile({
+      const response = await ownerApi.updateMyProfile({
         full_name: profileData.full_name.trim(),
         phone: phone || null,
+        profile_picture: profileData.profile_picture,
       })
 
+      onProfileUpdated?.({
+        full_name: response.profile.full_name,
+        profile_picture: response.profile.profile_picture,
+      })
       setShowEditProfile(false)
       await loadOwners(true)
     } catch (err) {
@@ -226,6 +280,27 @@ export default function OwnerManagement({
   useEffect(() => {
     void loadOwners()
   }, [loadOwners])
+
+  useEffect(() => {
+    if (
+      !openProfileRequest ||
+      openProfileRequest <= handledProfileRequest.current ||
+      !currentUserId ||
+      loading
+    ) return
+
+    const currentOwner = owners.find((owner) => owner.user_id === currentUserId)
+    if (!currentOwner) return
+
+    handledProfileRequest.current = openProfileRequest
+    setProfileData({
+      full_name: currentOwner.full_name,
+      phone: currentOwner.phone || '',
+      profile_picture: currentOwner.profile_picture,
+    })
+    setShowEditProfile(true)
+    setProfileError('')
+  }, [openProfileRequest, currentUserId, loading, owners])
 
   const activeOwners = owners.filter((owner) => owner.status === 'active').length
   const inactiveOwners = owners.length - activeOwners
@@ -357,6 +432,42 @@ export default function OwnerManagement({
             </label>
 
             <label>
+              {bengali ? 'প্রোফাইল ছবি (ঐচ্ছিক, সর্বোচ্চ ৫০ KB)' : 'Profile Picture (Optional, max 50 KB)'}
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={(event) => {
+                  const file = event.target.files?.[0]
+                  if (file) {
+                    void handleProfilePictureFile(
+                      file,
+                      (picture) => setFormData((previous) => ({
+                        ...previous,
+                        profile_picture: picture,
+                      })),
+                      setError,
+                    )
+                  }
+                  event.target.value = ''
+                }}
+                aria-describedby="new-owner-picture-hint"
+              />
+              <small id="new-owner-picture-hint">JPEG, PNG, or WebP. Maximum file size: 50 KB.</small>
+              {formData.profile_picture && (
+                <span className="owner-picture-preview-wrap">
+                  <img className="owner-picture-preview" src={formData.profile_picture} alt="Profile preview" />
+                  <button
+                    type="button"
+                    className="owner-profile-cancel"
+                    onClick={() => setFormData((previous) => ({ ...previous, profile_picture: null }))}
+                  >
+                    <X size={14} /> Remove picture
+                  </button>
+                </span>
+              )}
+            </label>
+
+            <label>
               {bengali ? 'Password (নতুন User-এর জন্য)' : 'Password (for new User)'}
               <input
                 type="password"
@@ -447,7 +558,11 @@ export default function OwnerManagement({
             {owners.map((owner) => (
               <div className="owner-list-item" key={owner.membership_id}>
                 <div className="owner-avatar">
-                  {owner.full_name.trim().charAt(0).toUpperCase()}
+                  {owner.profile_picture ? (
+                    <img src={owner.profile_picture} alt="" />
+                  ) : (
+                    owner.full_name.trim().charAt(0).toUpperCase()
+                  )}
                 </div>
 
                 <div className="owner-details">
@@ -576,6 +691,44 @@ export default function OwnerManagement({
                             }
                             maxLength={30}
                           />
+                        </label>
+
+                        <label>
+                          {bengali ? 'প্রোফাইল ছবি (ঐচ্ছিক, সর্বোচ্চ ৫০ KB)' : 'Profile Picture (Optional, max 50 KB)'}
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            onChange={(event) => {
+                              const file = event.target.files?.[0]
+                              if (file) {
+                                void handleProfilePictureFile(
+                                  file,
+                                  (picture) => setProfileData((previous) => ({
+                                    ...previous,
+                                    profile_picture: picture,
+                                  })),
+                                  setProfileError,
+                                )
+                              }
+                              event.target.value = ''
+                            }}
+                            aria-describedby="edit-owner-picture-hint"
+                            disabled={profileSubmitting}
+                          />
+                          <small id="edit-owner-picture-hint">JPEG, PNG, or WebP. Maximum file size: 50 KB.</small>
+                          {profileData.profile_picture && (
+                            <span className="owner-picture-preview-wrap">
+                              <img className="owner-picture-preview" src={profileData.profile_picture} alt="Profile preview" />
+                              <button
+                                type="button"
+                                className="owner-profile-cancel"
+                                onClick={() => setProfileData((previous) => ({ ...previous, profile_picture: null }))}
+                                disabled={profileSubmitting}
+                              >
+                                <X size={14} /> Remove picture
+                              </button>
+                            </span>
+                          )}
                         </label>
 
                         <label>

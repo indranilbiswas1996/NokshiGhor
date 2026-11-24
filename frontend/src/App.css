@@ -23,8 +23,11 @@
 .nav-item:hover { background: #203b36; color: white; }
 .nav-item.active { background: #1b9b7b; color: white; box-shadow: 0 5px 14px #071d1940; }
 .sidebar-bottom { border-top: 1px solid #2b4740; padding-top: 13px; }
-.sidebar-profile { display: flex; align-items: center; gap: 10px; padding: 16px 5px 0; margin-top: 9px; }
+.sidebar-profile { display: flex; align-items: center; gap: 10px; width: 100%; padding: 16px 5px 0; margin-top: 9px; border: 0; background: transparent; color: inherit; text-align: left; cursor: pointer; }
 .profile-avatar, .topbar-avatar { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: #d8e9e2; color: #236c56; font-size: 11px; font-weight: 700; }
+.profile-avatar, .topbar-avatar { padding: 0; border: 0; overflow: hidden; cursor: pointer; }
+.profile-avatar img, .topbar-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.sidebar-profile:focus-visible, .topbar-avatar:focus-visible { outline: 2px solid #159675; outline-offset: 3px; }
 
 .main-area { margin-left: 258px; min-height: 100vh; transition: margin-left .25s ease; }
 .sidebar-collapsed .sidebar { width: 78px; padding-inline: 12px; }

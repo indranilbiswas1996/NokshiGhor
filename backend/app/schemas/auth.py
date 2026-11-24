@@ -12,6 +12,7 @@ class UserResponse(BaseModel):
     id: UUID
     full_name: str
     email: str
+    profile_picture: str | None = None
 
 
 class LoginResponse(BaseModel):

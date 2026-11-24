@@ -4,6 +4,7 @@ export interface Owner {
   full_name: string
   email: string
   phone: string | null
+  profile_picture: string | null
   status: 'active' | 'inactive'
   created_at: string
   updated_at: string | null
@@ -17,6 +18,7 @@ export interface OwnerCreateRequest {
   email: string
   phone?: string | null
   password?: string | null
+  profile_picture?: string | null
 }
 
 export interface OwnerCreateResponse {
@@ -39,6 +41,7 @@ export interface OwnerStatusUpdateResponse {
 export interface OwnerProfileUpdateRequest {
   full_name: string
   phone?: string | null
+  profile_picture?: string | null
 }
 
 export interface OwnerProfileUpdateResponse {
@@ -46,5 +49,6 @@ export interface OwnerProfileUpdateResponse {
   profile: {
     full_name: string
     phone: string | null
+    profile_picture: string | null
   }
 }
