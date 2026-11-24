@@ -396,6 +396,7 @@ useEffect(() => {
   const designation = (authenticatedBusiness ? authenticatedBusiness.role_name : 'owner')
     .replace(/[_-]+/g, ' ')
     .replace(/\b\w/g, (letter) => letter.toUpperCase())
+  const isBusinessOwner = authenticatedBusiness?.role_name.trim().toLowerCase() === 'owner'
   const canManageBranding = authenticatedUser?.is_super_admin === true
 if (passwordResetToken) {
   return (
@@ -470,25 +471,25 @@ if (!authenticatedBusiness) {
           <X size={19} />
         </button>
 
-        <div className="business-switch" ref={branchSwitchRef}>
-          <div className="business-avatar">N</div>
-          <div className="business-info">
-            <strong>{authenticatedBusiness.business_name}</strong>
-            <span>
-              {selectedBranchId === 'all'
-                ? 'All Branches'
-                : accessibleBranches.find((branch) => branch.id === selectedBranchId)?.branch_name || 'Select Branch'}
-            </span>
-          </div>
+        <div className="business-switch-wrap" ref={branchSwitchRef}>
           <button
             type="button"
-            className="branch-switch-toggle"
+            className="business-switch"
             onClick={() => setBranchMenuOpen((open) => !open)}
-            aria-label="Choose branch"
+            aria-label="Choose business branch"
             aria-haspopup="menu"
             aria-expanded={branchMenuOpen}
             disabled={branchListLoading}
           >
+            <div className="business-avatar">N</div>
+            <div className="business-info">
+              <strong>{authenticatedBusiness.business_name}</strong>
+              <span>
+                {selectedBranchId === 'all'
+                  ? 'All Branches'
+                  : accessibleBranches.find((branch) => branch.id === selectedBranchId)?.branch_name || 'Select Branch'}
+              </span>
+            </div>
             <ChevronDown size={16} />
           </button>
           {branchMenuOpen && (
@@ -530,10 +531,18 @@ if (!authenticatedBusiness) {
         </div>
 
         <nav className="side-navigation">
-          {navigation.map((group) => (
+          {navigation.map((group) => {
+            const visibleItems = group.items.filter(
+              (item) =>
+                isBusinessOwner ||
+                !['Owner Management', 'Branch Management'].includes(item.label)
+            )
+            if (visibleItems.length === 0) return null
+
+            return (
             <div className="nav-group" key={group.title}>
               <p className="nav-heading">{bengali ? group.bn : group.title}</p>
-              {group.items.map((item) => {
+              {visibleItems.map((item) => {
                 const Icon = item.icon
                 return (
                   <button
@@ -548,7 +557,8 @@ if (!authenticatedBusiness) {
                 )
               })}
             </div>
-          ))}
+            )
+          })}
           {authenticatedUser?.is_super_admin && (
             <div className="nav-group">
               <p className="nav-heading">Platform</p>
@@ -750,14 +760,14 @@ if (!authenticatedBusiness) {
                 </span>
               </div>
             )}
-          {activePage === 'Owner Management' && (
+          {activePage === 'Owner Management' && isBusinessOwner && (
             <OwnerManagement
               bengali={bengali}
               openProfileRequest={profileOpenRequest}
               onProfileUpdated={handleProfileUpdated}
             />
           )}
-          {activePage === 'Branch Management' && (
+          {activePage === 'Branch Management' && isBusinessOwner && (
             <BranchManagement bengali={bengali} />
           )}
           {activePage === 'Super Admin' && authenticatedUser?.is_super_admin && (
