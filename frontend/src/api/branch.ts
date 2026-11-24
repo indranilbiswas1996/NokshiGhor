@@ -20,6 +20,13 @@ interface BranchListResponse {
 
 
 export const branchApi = {
+  async getAccessibleBranches(): Promise<BranchListResponse> {
+    const response = await apiClient.get<BranchListResponse>(
+      '/branches/accessible'
+    )
+    return response.data
+  },
+
   async getBranches(): Promise<BranchListResponse> {
     const response = await apiClient.get<BranchListResponse>('/branches')
     return response.data

@@ -18,6 +18,7 @@ class SaleItemCreate(BaseModel):
 
 
 class SaleCreateRequest(BaseModel):
+    branch_id: UUID | None = None
     customer_id: UUID | None = None
     warehouse_id: UUID | None = None
     sale_date: date = Field(default_factory=date.today)

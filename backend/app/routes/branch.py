@@ -56,6 +56,21 @@ def list_branches(
 
     return {"branches": branches}
 
+
+@router.get("/accessible", response_model=BranchListResponse)
+def list_accessible_branches(
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+    current_business=Depends(get_current_business),
+):
+    return {
+        "branches": branch_service.get_accessible_branches(
+            db=db,
+            business_id=str(current_business["id"]),
+            actor_user_id=str(current_user["id"]),
+        )
+    }
+
 @router.post("", response_model=BranchCreateResponse, status_code=201)
 def add_branch(
     payload: BranchCreateRequest,

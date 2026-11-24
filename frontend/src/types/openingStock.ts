@@ -9,6 +9,7 @@ export interface OpeningStockItemCreate {
 }
 
 export interface OpeningStockCreateRequest {
+  branch_id?: string | null
   warehouse_id: string
   opening_date: string
   notes?: string | null

@@ -7,6 +7,7 @@ export interface SaleItemCreate {
 }
 
 export interface SaleCreateRequest {
+  branch_id?: string | null
   customer_id?: string | null
   warehouse_id?: string | null
   sale_date?: string
@@ -109,4 +110,5 @@ export interface SalesWarehouse {
   warehouse_name: string
   warehouse_code: string
   is_default: boolean
+  branch_id: string
 }

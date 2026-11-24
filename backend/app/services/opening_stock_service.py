@@ -37,6 +37,24 @@ def create_opening_stock_draft(
     ]
 
     try:
+        if payload.branch_id is not None:
+            db.execute(
+                text("""
+                    SELECT public.fn_validate_branch_context(
+                        CAST(:business_id AS UUID),
+                        CAST(:user_id AS UUID),
+                        CAST(:branch_id AS UUID),
+                        CAST(:warehouse_id AS UUID)
+                    )
+                """),
+                {
+                    "business_id": business_id,
+                    "user_id": user_id,
+                    "branch_id": str(payload.branch_id),
+                    "warehouse_id": str(payload.warehouse_id),
+                },
+            )
+
         result = db.execute(
             text("""
                 SELECT public.fn_create_opening_stock_draft(
@@ -82,9 +100,19 @@ def create_opening_stock_draft(
         )
 
         if sqlstate == "P0001":
+            message = str(original_error)
+            branch_error = "branch" in message.lower()
             raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=str(original_error),
+                status_code=(
+                    status.HTTP_403_FORBIDDEN
+                    if branch_error
+                    else status.HTTP_409_CONFLICT
+                ),
+                detail=(
+                    "You do not have access to the selected branch or warehouse."
+                    if branch_error
+                    else message
+                ),
             ) from exc
 
         logger.exception("Failed to create opening stock draft")
@@ -98,6 +126,7 @@ def post_opening_stock(
     business_id: str,
     user_id: str,
     document_id: str,
+    branch_id: str | None = None,
 ) -> dict:
     """
     Post an opening stock document through the secure
@@ -105,6 +134,24 @@ def post_opening_stock(
     """
 
     try:
+        if branch_id is not None:
+            db.execute(
+                text("""
+                    SELECT public.fn_validate_opening_stock_branch(
+                        CAST(:business_id AS UUID),
+                        CAST(:user_id AS UUID),
+                        CAST(:branch_id AS UUID),
+                        CAST(:document_id AS UUID)
+                    )
+                """),
+                {
+                    "business_id": business_id,
+                    "user_id": user_id,
+                    "branch_id": branch_id,
+                    "document_id": document_id,
+                },
+            )
+
         db.execute(
             text("""
                 SELECT public.fn_post_opening_stock(
@@ -142,9 +189,19 @@ def post_opening_stock(
         )
 
         if sqlstate == "P0001":
+            message = str(original_error)
+            branch_error = "branch" in message.lower()
             raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=str(original_error),
+                status_code=(
+                    status.HTTP_403_FORBIDDEN
+                    if branch_error
+                    else status.HTTP_409_CONFLICT
+                ),
+                detail=(
+                    "Opening stock document is not available in the selected branch."
+                    if branch_error
+                    else message
+                ),
             ) from exc
 
         logger.exception("Failed to post opening stock")
@@ -176,6 +233,42 @@ def update_opening_stock_draft(
     ]
 
     try:
+        if payload.branch_id is not None:
+            db.execute(
+                text("""
+                    SELECT public.fn_validate_opening_stock_branch(
+                        CAST(:business_id AS UUID),
+                        CAST(:user_id AS UUID),
+                        CAST(:branch_id AS UUID),
+                        CAST(:document_id AS UUID)
+                    )
+                """),
+                {
+                    "business_id": business_id,
+                    "user_id": user_id,
+                    "branch_id": str(payload.branch_id),
+                    "document_id": document_id,
+                },
+            )
+
+        if payload.branch_id is not None:
+            db.execute(
+                text("""
+                    SELECT public.fn_validate_branch_context(
+                        CAST(:business_id AS UUID),
+                        CAST(:user_id AS UUID),
+                        CAST(:branch_id AS UUID),
+                        CAST(:warehouse_id AS UUID)
+                    )
+                """),
+                {
+                    "business_id": business_id,
+                    "user_id": user_id,
+                    "branch_id": str(payload.branch_id),
+                    "warehouse_id": str(payload.warehouse_id),
+                },
+            )
+
         result = db.execute(
             text("""
                 SELECT public.fn_update_opening_stock_draft(
@@ -223,9 +316,19 @@ def update_opening_stock_draft(
         )
 
         if sqlstate == "P0001":
+            message = str(original_error)
+            branch_error = "branch" in message.lower()
             raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=str(original_error),
+                status_code=(
+                    status.HTTP_403_FORBIDDEN
+                    if branch_error
+                    else status.HTTP_409_CONFLICT
+                ),
+                detail=(
+                    "You do not have access to the selected branch or warehouse."
+                    if branch_error
+                    else message
+                ),
             ) from exc
 
         logger.exception("Failed to update opening stock draft")
@@ -238,18 +341,21 @@ def list_opening_stock_drafts(
     db: Session,
     business_id: str,
     user_id: str,
+    branch_id: str | None = None,
 ):
     try:
         result = db.execute(
             text("""
                 SELECT public.fn_list_opening_stock_drafts(
                     CAST(:business_id AS UUID),
-                    CAST(:user_id AS UUID)
+                    CAST(:user_id AS UUID),
+                    CAST(:branch_id AS UUID)
                 )
             """),
             {
                 "business_id": business_id,
                 "user_id": user_id,
+                "branch_id": branch_id,
             },
         )
 

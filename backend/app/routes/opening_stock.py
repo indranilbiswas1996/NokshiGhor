@@ -47,12 +47,14 @@ def post_opening_stock_document(
     db: Annotated[Session, Depends(get_db)],
     current_user=Depends(get_current_user),
     current_business=Depends(require_permission("stock.manage")),
+    branch_id: UUID | None = None,
 ):
     return post_opening_stock(
         db=db,
         business_id=current_business["id"],
         user_id=current_user["id"],
         document_id=str(document_id),
+        branch_id=str(branch_id) if branch_id else None,
     )
 @router.put(
     "/{document_id}/draft",
@@ -80,9 +82,11 @@ def get_opening_stock_drafts(
     db: Annotated[Session, Depends(get_db)],
     current_user=Depends(get_current_user),
     current_business=Depends(require_permission("stock.manage")),
+    branch_id: UUID | None = None,
 ):
     return list_opening_stock_drafts(
         db=db,
         business_id=current_business["id"],
         user_id=current_user["id"],
+        branch_id=str(branch_id) if branch_id else None,
     )

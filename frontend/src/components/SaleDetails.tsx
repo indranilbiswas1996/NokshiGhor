@@ -6,6 +6,7 @@ import type { Sale } from '../types/sales'
 
 interface SaleDetailsProps {
   saleId: string
+  branchId: string | null
   onBack: () => void
 }
 
@@ -17,6 +18,7 @@ const formatMoney = (value: number) =>
 
 export default function SaleDetails({
   saleId,
+  branchId,
   onBack,
 }: SaleDetailsProps) {
   const [sale, setSale] = useState<Sale | null>(null)
@@ -34,7 +36,7 @@ export default function SaleDetails({
       setError('')
 
       try {
-        const response = await salesApi.getSaleDetails(saleId)
+        const response = await salesApi.getSaleDetails(saleId, branchId)
         if (!ignore) setSale(response)
       } catch (err) {
         console.error('Sale details loading failed:', err)
@@ -51,7 +53,7 @@ export default function SaleDetails({
     return () => {
       ignore = true
     }
-  }, [saleId])
+  }, [saleId, branchId])
 
   const handlePostSale = async () => {
     if (!sale || sale.sale_status !== 'draft' || posting) return
@@ -67,7 +69,7 @@ export default function SaleDetails({
     setPostSuccess('')
 
     try {
-      await salesApi.postSale(sale.id)
+      await salesApi.postSale(sale.id, branchId)
 
       // Update the status immediately after successful posting.
       setSale((current) =>
@@ -78,7 +80,7 @@ export default function SaleDetails({
 
       // Refresh invoice details from the backend.
       try {
-        const refreshedSale = await salesApi.getSaleDetails(sale.id)
+        const refreshedSale = await salesApi.getSaleDetails(sale.id, branchId)
         setSale(refreshedSale)
       } catch (refreshError) {
         console.error('Invoice refresh failed:', refreshError)

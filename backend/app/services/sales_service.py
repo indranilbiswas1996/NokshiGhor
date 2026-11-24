@@ -72,12 +72,49 @@ def create_sale_draft(
     """)
 
     try:
+        if payload.branch_id is not None:
+            if payload.warehouse_id is None:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="A warehouse is required when a branch is selected.",
+                )
+
+            db.execute(
+                text("""
+                    SELECT public.fn_validate_branch_context(
+                        CAST(:business_id AS UUID),
+                        CAST(:user_id AS UUID),
+                        CAST(:branch_id AS UUID),
+                        CAST(:warehouse_id AS UUID)
+                    )
+                """),
+                {
+                    "business_id": str(business_id),
+                    "user_id": str(user_id),
+                    "branch_id": str(payload.branch_id),
+                    "warehouse_id": str(payload.warehouse_id),
+                },
+            )
+
         result = db.execute(statement, params).scalar_one()
         db.commit()
         return result
 
+    except HTTPException:
+        db.rollback()
+        raise
     except SQLAlchemyError as exc:
         db.rollback()
+        original_error = getattr(exc, "orig", None)
+        sqlstate = getattr(original_error, "sqlstate", None)
+        if (
+            sqlstate == "P0001"
+            and "branch" in str(original_error).lower()
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have access to the selected branch or warehouse.",
+            ) from exc
         logger.error(
             "Sales draft creation failed: %s",
             getattr(exc.orig, "pgerror", str(exc.orig)),
@@ -92,6 +129,7 @@ def get_sale_details(
     business_id: UUID,
     user_id: UUID,
     sale_id: UUID,
+    branch_id: UUID | None = None,
 ):
     statement = text("""
         SELECT public.fn_get_sale_details(
@@ -102,6 +140,24 @@ def get_sale_details(
     """)
 
     try:
+        if branch_id is not None:
+            db.execute(
+                text("""
+                    SELECT public.fn_validate_sale_branch(
+                        CAST(:business_id AS UUID),
+                        CAST(:user_id AS UUID),
+                        CAST(:branch_id AS UUID),
+                        CAST(:sale_id AS UUID)
+                    )
+                """),
+                {
+                    "business_id": str(business_id),
+                    "user_id": str(user_id),
+                    "branch_id": str(branch_id),
+                    "sale_id": str(sale_id),
+                },
+            )
+
         result = db.execute(
             statement,
             {
@@ -113,8 +169,16 @@ def get_sale_details(
 
         return result
 
-    except SQLAlchemyError:
+    except SQLAlchemyError as exc:
         db.rollback()
+        if (
+            branch_id is not None
+            and getattr(getattr(exc, "orig", None), "sqlstate", None) == "P0001"
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Sale is not available in the selected branch.",
+            ) from exc
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Unable to retrieve sales details",
@@ -127,6 +191,7 @@ def get_sales_list(
     limit: int = 20,
     offset: int = 0,
     sale_status: str | None = None,
+    branch_id: UUID | None = None,
 ):
     statement = text("""
         SELECT public.fn_get_sales_list(
@@ -134,7 +199,8 @@ def get_sales_list(
             CAST(:business_id AS UUID),
             :limit,
             :offset,
-            :sale_status
+            :sale_status,
+            CAST(:branch_id AS UUID)
         )
     """)
 
@@ -147,14 +213,23 @@ def get_sales_list(
                 "limit": limit,
                 "offset": offset,
                 "sale_status": sale_status,
+                "branch_id": str(branch_id) if branch_id else None,
             },
         ).scalar_one_or_none()
 
         return result
 
-    except SQLAlchemyError:
+    except SQLAlchemyError as exc:
         db.rollback()
         logger.exception("Unable to retrieve sales list")
+        if (
+            branch_id is not None
+            and getattr(getattr(exc, "orig", None), "sqlstate", None) == "P0001"
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have access to the selected branch.",
+            ) from exc
         raise HTTPException(
             status_code=503,
             detail="Unable to retrieve sales list",
@@ -253,6 +328,7 @@ def post_sale(
     business_id: UUID,
     user_id: UUID,
     sale_id: UUID,
+    branch_id: UUID | None = None,
 ):
     statement = text("""
         SELECT public.fn_post_sale(
@@ -263,6 +339,24 @@ def post_sale(
     """)
 
     try:
+        if branch_id is not None:
+            db.execute(
+                text("""
+                    SELECT public.fn_validate_sale_branch(
+                        CAST(:business_id AS UUID),
+                        CAST(:user_id AS UUID),
+                        CAST(:branch_id AS UUID),
+                        CAST(:sale_id AS UUID)
+                    )
+                """),
+                {
+                    "business_id": str(business_id),
+                    "user_id": str(user_id),
+                    "branch_id": str(branch_id),
+                    "sale_id": str(sale_id),
+                },
+            )
+
         result = db.execute(
             statement,
             {
@@ -286,6 +380,11 @@ def post_sale(
 
         if sqlstate == "P0001":
             logger.warning("Sale posting validation failed")
+            if branch_id is not None and "branch" in str(original_error).lower():
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Sale is not available in the selected branch.",
+                ) from exc
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="Sale cannot be posted. Check sale status and stock availability.",

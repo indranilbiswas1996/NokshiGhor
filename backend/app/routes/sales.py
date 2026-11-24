@@ -95,12 +95,14 @@ def read_sale_details(
     db: Annotated[Session, Depends(get_db)],
     current_user=Depends(get_current_user),
     current_business=Depends(require_permission("sales.view")),
+    branch_id: UUID | None = None,
 ):
     sale = get_sale_details(
         db=db,
         business_id=current_business["id"],
         user_id=current_user["id"],
         sale_id=sale_id,
+        branch_id=branch_id,
     )
 
     if sale is None:
@@ -119,6 +121,7 @@ def list_sales(
     limit: int = 20,
     offset: int = 0,
     sale_status: str | None = None,
+    branch_id: UUID | None = None,
 ):
     if limit < 1 or limit > 100:
         raise HTTPException(
@@ -151,6 +154,7 @@ def list_sales(
         limit=limit,
         offset=offset,
         sale_status=sale_status,
+        branch_id=branch_id,
     )
 
     return result
@@ -162,12 +166,14 @@ def post_sale_endpoint(
     db: Annotated[Session, Depends(get_db)],
     current_user=Depends(get_current_user),
     current_business=Depends(require_permission("sales.manage")),
+    branch_id: UUID | None = None,
 ):
     result = post_sale(
         db=db,
         business_id=current_business["id"],
         user_id=current_user["id"],
         sale_id=sale_id,
+        branch_id=branch_id,
     )
 
     return {

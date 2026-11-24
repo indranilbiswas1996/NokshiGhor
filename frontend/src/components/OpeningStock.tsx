@@ -11,6 +11,7 @@ import type {
 import './OpeningStock.css'
 
 interface OpeningStockProps {
+  branchId: string | null
   onCancel: () => void
   onCompleted: () => void
 }
@@ -29,7 +30,7 @@ function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'Something went wrong.'
 }
 
-export default function OpeningStock({ onCancel, onCompleted }: OpeningStockProps) {
+export default function OpeningStock({ branchId, onCancel, onCompleted }: OpeningStockProps) {
   const [products, setProducts] = useState<SalesProduct[]>([])
   const [warehouses, setWarehouses] = useState<SalesWarehouse[]>([])
   const [warehouseId, setWarehouseId] = useState('')
@@ -61,17 +62,25 @@ export default function OpeningStock({ onCancel, onCompleted }: OpeningStockProp
         const [productList, warehouseList, draftResponse] = await Promise.all([
             salesApi.getSalesProducts(),
             salesApi.getSalesWarehouses(),
-            openingStockApi.getDrafts(),
+            openingStockApi.getDrafts(branchId),
         ])
 
         if (ignore) return
 
         setProducts(productList.filter((product) => product.track_inventory))
-        setWarehouses(warehouseList)
-        setSavedDrafts(draftResponse.drafts)
-        const defaultWarehouse = warehouseList.find((warehouse) => warehouse.is_default)
+        const availableWarehouses = warehouseList.filter(
+          (warehouse) => !branchId || warehouse.branch_id === branchId
+        )
+        setWarehouses(availableWarehouses)
+        setSavedDrafts(draftResponse.drafts.filter(
+          (draftItem) => !branchId || availableWarehouses.some(
+            (warehouse) => warehouse.id === draftItem.warehouse_id
+          )
+        ))
+        const defaultWarehouse = availableWarehouses.find((warehouse) => warehouse.is_default)
         if (defaultWarehouse) setWarehouseId(defaultWarehouse.id)
-        else if (warehouseList.length > 0) setWarehouseId(warehouseList[0].id)
+        else if (availableWarehouses.length > 0) setWarehouseId(availableWarehouses[0].id)
+        else setWarehouseId('')
       } catch (err) {
         if (!ignore) setError(getErrorMessage(err))
       } finally {
@@ -82,7 +91,7 @@ export default function OpeningStock({ onCancel, onCompleted }: OpeningStockProp
 
     loadReferences()
     return () => { ignore = true }
-  }, [])
+  }, [branchId])
 
   const totalValue = useMemo(() => rows.reduce((total, row) => {
     return total + (Number(row.quantity) || 0) * (Number(row.unit_cost) || 0)
@@ -91,8 +100,12 @@ export default function OpeningStock({ onCancel, onCompleted }: OpeningStockProp
   const selectedProductIds = rows.map((row) => row.product_id).filter(Boolean)
   async function refreshSavedDrafts() {
     try {
-        const response = await openingStockApi.getDrafts()
-        setSavedDrafts(response.drafts)
+        const response = await openingStockApi.getDrafts(branchId)
+        setSavedDrafts(response.drafts.filter(
+          (draftItem) => !branchId || warehouses.some(
+            (warehouse) => warehouse.id === draftItem.warehouse_id
+          )
+        ))
     } catch (err) {
         setError(getErrorMessage(err))
     }
@@ -168,6 +181,7 @@ export default function OpeningStock({ onCancel, onCompleted }: OpeningStockProp
     setSaving(true)
     try {
       const response = await openingStockApi.createDraft({
+        branch_id: branchId,
         warehouse_id: warehouseId,
         opening_date: openingDate,
         notes: notes.trim() || null,
@@ -211,6 +225,7 @@ export default function OpeningStock({ onCancel, onCompleted }: OpeningStockProp
 
     try {
         const response = await openingStockApi.updateDraft(draft.document_id, {
+        branch_id: branchId,
         warehouse_id: warehouseId,
         opening_date: openingDate,
         notes: notes.trim() || null,
@@ -243,7 +258,10 @@ export default function OpeningStock({ onCancel, onCompleted }: OpeningStockProp
     setSuccess('')
     setPosting(true)
     try {
-      const response = await openingStockApi.postOpeningStock(draft.document_id)
+      const response = await openingStockApi.postOpeningStock(
+        draft.document_id,
+        branchId,
+      )
       setDraft(response)
       await refreshSavedDrafts()
       setSuccess('Opening stock posted successfully. Inventory has been updated.')

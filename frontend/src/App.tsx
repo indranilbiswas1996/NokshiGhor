@@ -17,6 +17,8 @@ import SaleDetails from './components/SaleDetails'
 import OpeningStock from './components/OpeningStock'
 import OwnerManagement from './components/OwnerManagement'
 import BranchManagement from './components/BranchManagement'
+import { branchApi } from './api/branch'
+import type { Branch } from './api/branch'
 const navigation = [
   { title: 'Overview', bn: 'সারসংক্ষেপ', items: [
     { label: 'Dashboard', bn: 'ড্যাশবোর্ড', icon: LayoutDashboard },
@@ -102,6 +104,8 @@ function App() {
   const [customColor, setCustomColor] = useState('#A8797D')
   const [themePanelOpen, setThemePanelOpen] = useState(false)
   const themeControlRef = useRef<HTMLDivElement>(null)
+  const branchSwitchRef = useRef<HTMLDivElement>(null)
+  const [branchMenuOpen, setBranchMenuOpen] = useState(false)
 
   useEffect(() => {
     const handleOutsideClick = (event: PointerEvent) => {
@@ -111,11 +115,19 @@ function App() {
       ) {
         setThemePanelOpen(false)
       }
+
+      if (
+        branchSwitchRef.current &&
+        !branchSwitchRef.current.contains(event.target as Node)
+      ) {
+        setBranchMenuOpen(false)
+      }
     }
 
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setThemePanelOpen(false)
+        setBranchMenuOpen(false)
       }
     }
 
@@ -144,6 +156,10 @@ const [authenticatedBusiness, setAuthenticatedBusiness] =
 useState<Business | null>(null)
 const [authenticatedUser, setAuthenticatedUser] = useState<User | null>(null)
 const [profileOpenRequest, setProfileOpenRequest] = useState(0)
+const [accessibleBranches, setAccessibleBranches] = useState<Branch[]>([])
+const [branchListLoading, setBranchListLoading] = useState(false)
+const [branchSelectionLoaded, setBranchSelectionLoaded] = useState(false)
+const [selectedBranchId, setSelectedBranchId] = useState('all')
 
 const handleAuthenticated = useCallback((business: Business) => {
   setAuthenticatedBusiness(business)
@@ -170,6 +186,63 @@ useEffect(() => {
   }
 }, [authenticatedBusiness])
 
+useEffect(() => {
+  if (!authenticatedBusiness) {
+    setAccessibleBranches([])
+    setSelectedBranchId('all')
+    setBranchSelectionLoaded(false)
+    return
+  }
+
+  let current = true
+  setBranchListLoading(true)
+  setBranchSelectionLoaded(false)
+
+  void branchApi.getAccessibleBranches()
+    .then(({ branches }) => {
+      if (!current) return
+
+      const sortedBranches = branches
+        .sort((a, b) => a.branch_name.localeCompare(b.branch_name))
+      const selectionKey = `nokshighor-selected-branch:${authenticatedBusiness.id}`
+      const savedSelection = sessionStorage.getItem(selectionKey)
+      const initialBranch = sortedBranches.find(
+        (branch) => branch.id === savedSelection && branch.is_active
+      ) || sortedBranches.find(
+        (branch) => branch.is_default && branch.is_active
+      ) || sortedBranches.find((branch) => branch.is_active)
+
+      setAccessibleBranches(sortedBranches)
+      setSelectedBranchId(
+        savedSelection === 'all' ? 'all' : initialBranch?.id || 'all'
+      )
+      setBranchSelectionLoaded(true)
+    })
+    .catch((error) => {
+      if (current) {
+        console.error('Unable to load accessible branches:', error)
+        setAccessibleBranches([])
+        setSelectedBranchId('all')
+        setBranchSelectionLoaded(true)
+      }
+    })
+    .finally(() => {
+      if (current) setBranchListLoading(false)
+    })
+
+  return () => {
+    current = false
+  }
+}, [authenticatedBusiness?.id])
+
+useEffect(() => {
+  if (!authenticatedBusiness || !branchSelectionLoaded) return
+  sessionStorage.setItem(
+    `nokshighor-selected-branch:${authenticatedBusiness.id}`,
+    selectedBranchId,
+  )
+}, [authenticatedBusiness?.id, branchSelectionLoaded, selectedBranchId])
+
 const openOwnerProfile = () => {
   setActivePage('Owner Management')
   setProfileOpenRequest((request) => request + 1)
@@ -188,6 +261,11 @@ const handleLogout = async () => {
   } catch (error) {
     console.error('Logout failed:', error)
   } finally {
+    if (authenticatedBusiness) {
+      sessionStorage.removeItem(
+        `nokshighor-selected-branch:${authenticatedBusiness.id}`
+      )
+    }
     setAuthenticatedBusiness(null)
   }
 }
@@ -228,6 +306,7 @@ useEffect(() => {
       const response = await salesApi.getSales({
         limit: 20,
         offset: 0,
+        branch_id: selectedBranchId === 'all' ? undefined : selectedBranchId,
       })
 
       if (!ignore) {
@@ -253,7 +332,7 @@ useEffect(() => {
   return () => {
     ignore = true
   }
-}, [activePage, authenticatedBusiness, salesRefreshKey])
+}, [activePage, authenticatedBusiness, salesRefreshKey, selectedBranchId])
 
   const [sales, setSales] = useState<SaleListItem[]>([])
   const [salesLoading, setSalesLoading] = useState(false)
@@ -324,13 +403,65 @@ if (!authenticatedBusiness) {
           <button className="mobile-close" onClick={() => setMobileOpen(false)} aria-label="Close sidebar"><X size={19} /></button>
         </div>
 
-        <div className="business-switch">
+        <div className="business-switch" ref={branchSwitchRef}>
           <div className="business-avatar">N</div>
           <div className="business-info">
-            <strong>{businessSettings.shopName}</strong>
-            <span>{businessSettings.businessType}</span>
+            <strong>{authenticatedBusiness.business_name}</strong>
+            <span>
+              {selectedBranchId === 'all'
+                ? 'All Branches'
+                : accessibleBranches.find((branch) => branch.id === selectedBranchId)?.branch_name || 'Select Branch'}
+            </span>
           </div>
-          <ChevronDown size={16} />
+          <button
+            type="button"
+            className="branch-switch-toggle"
+            onClick={() => setBranchMenuOpen((open) => !open)}
+            aria-label="Choose branch"
+            aria-haspopup="menu"
+            aria-expanded={branchMenuOpen}
+            disabled={branchListLoading}
+          >
+            <ChevronDown size={16} />
+          </button>
+          {branchMenuOpen && (
+            <div className="branch-switch-menu" role="menu" aria-label="Select branch">
+              <button
+                type="button"
+                role="menuitemradio"
+                aria-checked={selectedBranchId === 'all'}
+                className={selectedBranchId === 'all' ? 'selected' : ''}
+                onClick={() => {
+                  setSelectedBranchId('all')
+                  setBranchMenuOpen(false)
+                  setMobileOpen(false)
+                }}
+              >
+                All Branches
+              </button>
+              {accessibleBranches.map((branch) => (
+                <button
+                  key={branch.id}
+                  type="button"
+                  role="menuitemradio"
+                  aria-checked={selectedBranchId === branch.id}
+                  aria-disabled={!branch.is_active}
+                  className={selectedBranchId === branch.id ? 'selected' : ''}
+                  disabled={!branch.is_active}
+                  onClick={() => {
+                    setSelectedBranchId(branch.id)
+                    setBranchMenuOpen(false)
+                    setMobileOpen(false)
+                  }}
+                >
+                  {branch.branch_name} ({branch.is_active ? 'Active' : 'Inactive'})
+                </button>
+              ))}
+              {!branchListLoading && accessibleBranches.length === 0 && (
+                <span className="branch-switch-empty">No accessible branches</span>
+              )}
+            </div>
+          )}
         </div>
 
         <nav className="side-navigation">
@@ -528,6 +659,7 @@ if (!authenticatedBusiness) {
 
           {activePage === 'Inventory' && isCreatingOpeningStock && (
             <OpeningStock
+              branchId={selectedBranchId === 'all' ? null : selectedBranchId}
               onCancel={() => setIsCreatingOpeningStock(false)}
               onCompleted={() => setIsCreatingOpeningStock(false)}
             />
@@ -602,11 +734,13 @@ if (!authenticatedBusiness) {
           {activePage === 'Sales & POS' && selectedSaleId && (
             <SaleDetails
               saleId={selectedSaleId}
+              branchId={selectedBranchId === 'all' ? null : selectedBranchId}
               onBack={() => setSelectedSaleId(null)}
             />
           )}
           {activePage === 'Sales & POS' && isCreatingSale && (
             <NewSaleForm
+              branchId={selectedBranchId === 'all' ? null : selectedBranchId}
               onCancel={() => setIsCreatingSale(false)}
               onCreated={() => {
                 setIsCreatingSale(false)

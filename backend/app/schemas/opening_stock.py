@@ -14,6 +14,7 @@ class OpeningStockItemCreate(BaseModel):
 
 
 class OpeningStockCreateRequest(BaseModel):
+    branch_id: UUID | None = None
     warehouse_id: UUID
     opening_date: date = Field(default_factory=date.today)
     notes: str | None = Field(default=None, max_length=2000)
@@ -37,6 +38,7 @@ class OpeningStockResponse(BaseModel):
     document_id: UUID
     opening_status: str
 class OpeningStockUpdateRequest(BaseModel):
+    branch_id: UUID | None = None
     warehouse_id: UUID
     opening_date: date
     notes: str | None = Field(default=None, max_length=2000)

@@ -18,11 +18,12 @@ interface SaleLine {
 }
 
 interface Props {
+  branchId: string | null
   onCancel: () => void
   onCreated: () => void
 }
 
-export default function NewSaleForm({ onCancel, onCreated }: Props) {
+export default function NewSaleForm({ branchId, onCancel, onCreated }: Props) {
   const [products, setProducts] = useState<SalesProduct[]>([])
   const [customers, setCustomers] = useState<SalesCustomer[]>([])
   const [warehouses, setWarehouses] = useState<SalesWarehouse[]>([])
@@ -55,11 +56,18 @@ export default function NewSaleForm({ onCancel, onCreated }: Props) {
 
         setProducts(productData)
         setCustomers(customerData)
-        setWarehouses(warehouseData)
+        const availableWarehouses = warehouseData.filter(
+          (warehouse) => !branchId || warehouse.branch_id === branchId
+        )
+        setWarehouses(availableWarehouses)
 
-        const defaultWarehouse = warehouseData.find((item) => item.is_default)
+        const defaultWarehouse = availableWarehouses.find((item) => item.is_default)
         if (defaultWarehouse) {
           setWarehouseId(defaultWarehouse.id)
+        } else if (availableWarehouses.length > 0) {
+          setWarehouseId(availableWarehouses[0].id)
+        } else {
+          setWarehouseId('')
         }
       } catch (err) {
         console.error('Sales reference loading failed:', err)
@@ -76,7 +84,7 @@ export default function NewSaleForm({ onCancel, onCreated }: Props) {
     return () => {
       ignore = true
     }
-  }, [])
+  }, [branchId])
 
   const selectedProducts = lines
     .map((line) => products.find((product) => product.id === line.product_id))
@@ -84,7 +92,7 @@ export default function NewSaleForm({ onCancel, onCreated }: Props) {
 
   const warehouseRequired = selectedProducts.some(
     (product) => product.track_inventory
-  )
+  ) || Boolean(branchId)
 
   const totals = useMemo(() => {
     let subtotal = 0
@@ -166,6 +174,7 @@ export default function NewSaleForm({ onCancel, onCreated }: Props) {
     }
 
     const payload: SaleCreateRequest = {
+      branch_id: branchId,
       customer_id: customerId || null,
       warehouse_id: warehouseId || null,
       discount_amount: 0,

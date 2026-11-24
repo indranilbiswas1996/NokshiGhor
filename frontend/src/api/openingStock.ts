@@ -7,9 +7,10 @@ import type {
 } from '../types/openingStock'
 
 export const openingStockApi = {
-  async getDrafts(): Promise<OpeningStockDraftListResponse> {
+  async getDrafts(branchId?: string | null): Promise<OpeningStockDraftListResponse> {
     const response = await apiClient.get<OpeningStockDraftListResponse>(
-      '/opening-stock/drafts'
+      '/opening-stock/drafts',
+      { params: branchId ? { branch_id: branchId } : undefined }
     )
     return response.data
   },
@@ -25,10 +26,13 @@ export const openingStockApi = {
   },
 
   async postOpeningStock(
-    documentId: string
+    documentId: string,
+    branchId?: string | null,
   ): Promise<OpeningStockResponse> {
     const response = await apiClient.post<OpeningStockResponse>(
-      `/opening-stock/${documentId}/post`
+      `/opening-stock/${documentId}/post`,
+      undefined,
+      { params: branchId ? { branch_id: branchId } : undefined }
     )
     return response.data
   },

@@ -42,6 +42,33 @@ def get_branches(
         )
 
 
+def get_accessible_branches(
+    db: Session,
+    business_id: str,
+    actor_user_id: str,
+):
+    try:
+        result = db.execute(
+            text("""
+                SELECT *
+                FROM public.fn_accessible_branch_list(
+                    CAST(:business_id AS UUID),
+                    CAST(:actor_user_id AS UUID)
+                )
+            """),
+            {
+                "business_id": business_id,
+                "actor_user_id": actor_user_id,
+            },
+        )
+        return [dict(row) for row in result.mappings().all()]
+    except SQLAlchemyError as exc:
+        db.rollback()
+        if getattr(exc.orig, "sqlstate", None) == "P0001":
+            raise HTTPException(status_code=403, detail="Active business access is required.")
+        raise HTTPException(status_code=503, detail="Unable to retrieve accessible branches.")
+
+
 def create_branch(
     db: Session,
     business_id: str,

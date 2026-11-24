@@ -5,7 +5,7 @@ git remote -v
 git status --short
 git add .
 git status
-git commit -m "Complete 7. Branch Admin Assignment : Access & Revoke"
+git commit -m "Create Admin without Branch assignment"
 git push -u origin main
 
 cd C:\xampp\htdocs\Project\NokshiGhor\frontend
@@ -109,12 +109,12 @@ Completed
 - Branch-এর সম্পূর্ণ তথ্য
 - Branch Summary
 - Branch-specific information
-Pending
+Completed
  7. Branch Admin Assignment
 - এক Branch-এ একাধিক Admin
 - Admin Assign / Reassign
 - Admin-এর Branch access নিয়ন্ত্রণ
-Pending
+Completed
  8. Employee Assignment
 - Employee-কে Branch-এ Assign
 - Employee Transfer

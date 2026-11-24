@@ -14,6 +14,7 @@ export const salesApi = {
     limit?: number
     offset?: number
     sale_status?: string
+    branch_id?: string
   }): Promise<SaleListResponse> {
     const response = await apiClient.get<SaleListResponse>('/sales', {
       params,
@@ -21,8 +22,10 @@ export const salesApi = {
     return response.data
   },
 
-  async getSaleDetails(saleId: string): Promise<Sale> {
-    const response = await apiClient.get<Sale>(`/sales/${saleId}`)
+  async getSaleDetails(saleId: string, branchId?: string | null): Promise<Sale> {
+    const response = await apiClient.get<Sale>(`/sales/${saleId}`, {
+      params: branchId ? { branch_id: branchId } : undefined,
+    })
     return response.data
   },
 
@@ -57,7 +60,7 @@ export const salesApi = {
     return response.data
   },
 
-  async postSale(saleId: string): Promise<{
+  async postSale(saleId: string, branchId?: string | null): Promise<{
     success: boolean
     message: string
     sale_id: string
@@ -66,7 +69,9 @@ export const salesApi = {
       success: boolean
       message: string
       sale_id: string
-    }>(`/sales/${saleId}/post`)
+    }>(`/sales/${saleId}/post`, undefined, {
+      params: branchId ? { branch_id: branchId } : undefined,
+    })
 
     return response.data
   },
